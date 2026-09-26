@@ -1,0 +1,31 @@
+from app.services import (
+    adaptive,
+    ai_usage,
+    assessment,
+    gamification,
+    ingestion,
+    notifications,
+    pipeline,
+    planner,
+    repetition,
+    retrieval,
+    structuring,
+    teaching,
+    tutor,
+)
+
+__all__ = [
+    "adaptive",
+    "ai_usage",
+    "assessment",
+    "gamification",
+    "ingestion",
+    "notifications",
+    "pipeline",
+    "planner",
+    "repetition",
+    "retrieval",
+    "structuring",
+    "teaching",
+    "tutor",
+]

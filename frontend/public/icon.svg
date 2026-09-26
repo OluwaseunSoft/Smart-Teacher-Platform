@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Suhail Smart Teacher">
+  <rect width="512" height="512" rx="112" fill="#4f46e5" />
+  <path
+    d="M256 96l-136 64 136 64 104-49v97a24 24 0 0 0 48 0v-112l-152-64z"
+    fill="#ffffff"
+  />
+  <path
+    d="M168 250v64c0 35 40 62 88 62s88-27 88-62v-64l-88 41-88-41z"
+    fill="#c7d2fe"
+  />
+</svg>

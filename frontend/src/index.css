@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.prose-lesson h1,
+.prose-lesson h2,
+.prose-lesson h3 {
+  font-weight: 600;
+  margin: 1.2em 0 0.5em;
+  line-height: 1.25;
+}
+.prose-lesson h1 { font-size: 1.6rem; }
+.prose-lesson h2 { font-size: 1.3rem; }
+.prose-lesson h3 { font-size: 1.1rem; }
+.prose-lesson p { margin: 0.7em 0; line-height: 1.7; }
+.prose-lesson ul { list-style: disc; padding-inline-start: 1.4em; margin: 0.7em 0; }
+.prose-lesson ol { list-style: decimal; padding-inline-start: 1.4em; margin: 0.7em 0; }
+.prose-lesson li { margin: 0.25em 0; line-height: 1.6; }
+.prose-lesson code {
+  background: #f1f5f9;
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.prose-lesson pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 0.9em 1em;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.prose-lesson blockquote {
+  border-inline-start: 3px solid #cbd5e1;
+  padding-inline-start: 1em;
+  color: #475569;
+  margin: 0.8em 0;
+}

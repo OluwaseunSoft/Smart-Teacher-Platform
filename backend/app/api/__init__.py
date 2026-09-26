@@ -1,0 +1,31 @@
+from app.api import (
+    admin,
+    auth,
+    curriculum,
+    gamification,
+    lessons,
+    mastery,
+    materials,
+    notifications,
+    planner,
+    quizzes,
+    reviews,
+    sessions,
+    tutor,
+)
+
+__all__ = [
+    "admin",
+    "auth",
+    "curriculum",
+    "gamification",
+    "lessons",
+    "mastery",
+    "materials",
+    "notifications",
+    "planner",
+    "quizzes",
+    "reviews",
+    "sessions",
+    "tutor",
+]
