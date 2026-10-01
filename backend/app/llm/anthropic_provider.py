@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from app.llm.base import LLMError, LLMProvider, Message
 
-DEFAULT_MODEL = "claude-3-5-sonnet-latest"
+DEFAULT_MODEL = "claude-sonnet-5-5"
 
 
 class AnthropicProvider(LLMProvider):
@@ -37,7 +37,6 @@ class AnthropicProvider(LLMProvider):
                 model=self._model,
                 system=system or "",
                 messages=messages,  # type: ignore[arg-type]
-                temperature=temperature,
                 max_tokens=max_tokens,
             )
         except Exception as exc:  # noqa: BLE001
