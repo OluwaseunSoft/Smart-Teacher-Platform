@@ -100,6 +100,33 @@ Open http://localhost:5173. Vite proxies `/api` to the backend on port 8000.
 3. Open a lesson, **Take the quiz**.
 4. **Start study session** and let the adaptive engine guide you.
 
+### Run with Docker
+
+Docker Compose starts the frontend, API, and Ollama. The frontend is served on
+http://localhost:8080 and forwards `/api` requests to the backend. The backend
+API and Swagger UI are also available at http://localhost:8000 and
+http://localhost:8000/docs.
+
+```powershell
+Copy-Item backend\.env.example backend\.env
+docker compose up --build -d
+docker compose exec ollama ollama pull llama3.1
+docker compose exec ollama ollama pull nomic-embed-text
+```
+
+Ollama downloads model weights into a named volume on the first pull; the
+downloads are not part of either application image. The backend installs the
+Python requirements, including the OpenAI and Anthropic SDKs. To use either
+hosted provider instead of Ollama, set `LLM_PROVIDER`, `EMBEDDING_PROVIDER`,
+and the relevant API key in `backend/.env`. Keep `OLLAMA_BASE_URL` as provided
+when using Ollama in Compose; the Compose network routes it to the Ollama
+container.
+
+SQLite data and Ollama model files persist in named volumes. Stop the services
+without deleting data with `docker compose down`; `docker compose down -v`
+removes those volumes and their contents. Replace the development
+`AUTH_SECRET_KEY` before exposing a deployment to users.
+
 ---
 
 ## Development
