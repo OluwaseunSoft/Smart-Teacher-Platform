@@ -2,7 +2,8 @@ FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    SEED_DEMO_DATA=true
 
 WORKDIR /app
 
@@ -16,6 +17,8 @@ RUN pip install --no-cache-dir -r requirements.txt \
 COPY --chown=app:app app ./app
 
 USER app
+
+ENTRYPOINT ["python", "-m", "app.docker_entrypoint"]
 
 EXPOSE 8000
 

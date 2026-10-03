@@ -127,6 +127,15 @@ without deleting data with `docker compose down`; `docker compose down -v`
 removes those volumes and their contents. Replace the development
 `AUTH_SECRET_KEY` before exposing a deployment to users.
 
+On first start with a new, empty Docker database volume, the backend seeds the
+authored demo accounts, lessons, quizzes, and study progress from
+`backend/app/seed.py`. This seed is part of the backend image; it does not copy
+your local `backend/suhail.db` into the image. Existing database volumes are
+left untouched. Demo login defaults are `student@suhail.demo` /
+`password123` and `admin@suhail.demo` / `password123`. Before a public
+deployment, set `SEED_DEMO_DATA=false` in `backend/.env` and replace the demo
+credentials and `AUTH_SECRET_KEY`.
+
 ---
 
 ## Development

@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:5173"
     RETRIEVAL_TOP_K: int = 5
     MAX_UPLOAD_MB: int = 20
+    SEED_DEMO_DATA: bool = True
 
     # Auth
     AUTH_SECRET_KEY: str = "dev-insecure-change-me-please-set-a-real-secret"
