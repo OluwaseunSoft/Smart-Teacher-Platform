@@ -30,6 +30,12 @@ export default function MaterialDetailPage() {
     enabled: material.data?.status === "ready",
   });
 
+  const curriculum = useQuery({
+    queryKey: ["curriculum", "material", id],
+    queryFn: () => api.materialCurriculum(id),
+    enabled: material.data?.status === "ready",
+  });
+
   const process = useMutation({
     mutationFn: () => api.processMaterial(id),
     onSuccess: () => {
@@ -50,6 +56,18 @@ export default function MaterialDetailPage() {
   const m = material.data;
   const lessonByConcept = new Map(
     (lessons.data ?? []).map((l) => [l.concept_id, l]),
+  );
+  const topicByConcept = new Map(
+    (curriculum.data?.subjects ?? []).flatMap((subject) =>
+      subject.chapters.flatMap((chapter) =>
+        chapter.topics
+        .filter(
+          (topic): topic is typeof topic & { concept_id: number } =>
+            topic.concept_id !== null,
+        )
+        .map((topic) => [topic.concept_id, topic] as const),
+      ),
+    ),
   );
 
   return (
@@ -108,9 +126,9 @@ export default function MaterialDetailPage() {
           <ErrorText>
             {start.error ? (start.error as Error).message : ""}
           </ErrorText>
-          {(concepts.isError || lessons.isError) && (
+          {(concepts.isError || lessons.isError || curriculum.isError) && (
             <ErrorText>
-              {((concepts.error ?? lessons.error) as Error).message}
+              {((concepts.error ?? lessons.error ?? curriculum.error) as Error).message}
             </ErrorText>
           )}
 
@@ -118,6 +136,7 @@ export default function MaterialDetailPage() {
             <h2 className="text-lg font-semibold">Curriculum</h2>
             {(concepts.data ?? []).map((c) => {
               const lesson = lessonByConcept.get(c.id);
+              const topic = topicByConcept.get(c.id);
               return (
                 <Card
                   key={c.id}
@@ -136,7 +155,11 @@ export default function MaterialDetailPage() {
                         {c.summary}
                       </p>
                     </div>
-                    {lesson ? (
+                    {topic ? (
+                      <Link to={`/topics/${topic.id}`}>
+                        <Button variant="secondary">Open topic</Button>
+                      </Link>
+                    ) : lesson ? (
                       <Link to={`/lessons/${lesson.id}`}>
                         <Button variant="secondary">Open lesson</Button>
                       </Link>

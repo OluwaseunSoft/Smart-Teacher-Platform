@@ -119,8 +119,12 @@ def get_topic(
                 chunk_id=link.chunk_id,
                 index=link.chunk.index if link.chunk is not None else 0,
                 relevance=link.relevance,
+                content=link.chunk.content if link.chunk is not None else "",
             )
             for link in topic.chunk_links
         ],
         lessons=[LessonSummary.model_validate(lesson) for lesson in topic.lessons],
+        source_material_id=material.id,
+        source_title=material.title,
+        source_filename=material.filename,
     )

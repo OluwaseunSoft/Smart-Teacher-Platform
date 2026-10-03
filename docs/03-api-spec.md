@@ -56,6 +56,17 @@ Material response:
   "summary": "...", "order_index": 2, "difficulty": "core" }
 ```
 
+## Topic study view
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/curriculum` | List the student's subject → chapter → topic hierarchy. |
+| GET | `/api/topics/{id}` | Get topic details, associated lessons, and source excerpts. |
+
+The topic response includes `grounding` references with the source chunk's
+`content`, `index`, and `relevance`, plus source material metadata. This endpoint
+is scoped to the authenticated student's materials.
+
 ## Lessons
 
 | Method | Path | Description |

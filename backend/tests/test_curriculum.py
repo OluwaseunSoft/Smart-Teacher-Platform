@@ -149,8 +149,15 @@ def test_topic_detail_includes_grounding(api_client, test_session):
     assert resp.status_code == 200
     body = resp.json()
     assert body["title"] == "Nucleus"
+    assert body["source_material_id"] == material_id
+    assert body["source_title"] == "Biology"
     assert body["grounding"] == [
-        {"chunk_id": chunk.id, "index": 2, "relevance": 0.9}
+        {
+            "chunk_id": chunk.id,
+            "index": 2,
+            "relevance": 0.9,
+            "content": "nucleus content",
+        }
     ]
 
 

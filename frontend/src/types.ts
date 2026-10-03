@@ -109,6 +109,21 @@ export interface TopicSummary {
   order_index: number;
 }
 
+export interface TopicGrounding {
+  chunk_id: number;
+  index: number;
+  relevance: number | null;
+  content: string;
+}
+
+export interface TopicDetail extends TopicSummary {
+  grounding: TopicGrounding[];
+  lessons: LessonSummary[];
+  source_material_id: number | null;
+  source_title: string | null;
+  source_filename: string | null;
+}
+
 export interface ChapterSummary {
   id: number;
   subject_id: number;

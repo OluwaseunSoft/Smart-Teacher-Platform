@@ -1,59 +1,103 @@
 # Device-by-device acceptance checklist
 
-This checklist defines the required screen-level acceptance criteria for the Suhail Smart Teacher Platform. It is intentionally stricter than basic responsiveness and is meant to validate actual mobile, tablet, and desktop behavior before release.
+Use this checklist against the running app at the exact viewport widths below.
+It defines acceptance criteria; checked items must be based on observed browser
+behavior, not inferred from CSS alone. Record browser, OS, orientation, and date
+when completing a release run.
 
-## Device targets
-- 360px mobile
-- 768px tablet
-- 1024px tablet/laptop
-- 1440px desktop
+## Current shell behavior to verify
 
-## Escape criteria
-A screen passes only when all items in the relevant section pass without broken layout, content clipping, blocked controls, or inaccessible interactions.
+- The app shell switches to compact bottom navigation below Tailwind's `sm`
+  breakpoint (640px); the desktop navigation is shown at 640px and wider.
+- Main content is capped at `max-w-6xl` (1152px) and gets wider side padding at
+  the `sm` breakpoint.
+- The global header remains sticky; the mobile bottom navigation is fixed and
+  includes the device safe-area inset.
+- The topic view uses horizontally scrollable tabs on narrow viewports and
+  keeps one tab panel active at a time.
 
-## 360px mobile checklist
-- [ ] Public landing page loads cleanly and fits within the viewport without horizontal scroll.
-- [ ] Auth screen keeps form fields fully readable and interactive with no clipped labels or controls.
-- [ ] Core action buttons remain at least 44px tall and easy to tap with one hand.
-- [ ] Navigation is accessible via a mobile bottom nav or equivalent compact control pattern.
-- [ ] The main content avoids overlap with fixed navigation and safe-area insets.
-- [ ] Language switching and all primary actions remain reachable without requiring zoom.
-- [ ] Focus styles are visible and consistent for keyboard and assistive-tech users.
-- [ ] No content is hidden under sticky headers or floating bars.
-- [ ] Offline shell fallback loads with the app still usable when the network is unavailable.
-- [ ] The app remains readable in both English and Arabic without broken alignment or RTL reversal issues.
+## 360px mobile portrait
 
-## 768px tablet checklist
-- [ ] Layout adapts to a tablet reading width without large empty gutters or cramped content blocks.
-- [ ] Cards and forms maintain comfortable spacing and readable line lengths.
-- [ ] Navigation remains clear without overcrowding the header or causing content wrap issues.
-- [ ] Learning and dashboard information are easy to scan in portrait and landscape orientations.
-- [ ] RTL Arabic layout remains visually balanced and readable without mirrored text glitches.
-- [ ] Touch targets remain comfortably sized for tablet interactions.
-- [ ] PWA offline fallback remains functional and consistent with mobile behavior.
+- [ ] Landing, sign-in, library, material detail, topic, quiz, tutor, planner,
+  settings, and notification screens have no horizontal page scroll.
+- [ ] Header controls do not collide; bottom navigation labels/icons remain
+  legible and do not obscure the last focusable content.
+- [ ] Topic title, long lesson heading, objectives, markdown/code blocks, source
+  excerpts, and errors wrap without clipping or forcing page-width overflow.
+- [ ] All five topic tabs (Notes, Flashcards, Quiz, Tutor, Source) are reachable
+  by touch and horizontal scroll; the active tab and its panel are announced.
+- [ ] Flashcard flip, skip, Again/Good/Easy, quiz start, tutor send, and material
+  back-link controls remain usable at 44px minimum target height.
+- [ ] Tutor input and Send button fit together; typing and sending do not shift
+  the page underneath the fixed navigation.
+- [ ] Source excerpt text is readable; source index and relevance do not overlap.
+- [ ] Keyboard focus is visible and can move through the tablist and active panel.
+- [ ] Test both English LTR and Arabic RTL; tab scrolling and arrow/back labels
+  remain understandable and do not cause horizontal page overflow.
 
-## 1024px tablet/laptop checklist
-- [ ] Dashboard and library views remain balanced and legible at this intermediate width.
-- [ ] Multi-column content does not force excessive scanning or clumsy alignment.
-- [ ] Secondary actions remain visible without crowding core content.
-- [ ] Tutor, planner, and review screens maintain readable spacing and clear flow.
-- [ ] Edge cases such as long titles, status badges, and compact tables remain usable.
-- [ ] Accessibility landmarks and focus order remain clear across the wider viewport.
+## 768px tablet portrait
 
-## 1440px desktop checklist
-- [ ] Wide layouts use space efficiently without excessive empty gaps or stretched single-column designs.
-- [ ] Dashboard, admin, and analytics screens remain legible and visually grouped.
-- [ ] Dense information is still readable and scannable without overwhelming the user.
-- [ ] Navigation and utility actions retain clarity when the viewport is wide.
-- [ ] PWA state, loading, and offline support continue to behave predictably across desktop browsers.
+- [ ] Desktop header navigation is available at this width without wrapping into
+  the main content or overlapping account/language controls.
+- [ ] Topic tabs remain visible together when labels fit; if they overflow,
+  horizontal scrolling still exposes Source and does not obscure focus.
+- [ ] Lesson content and source excerpts use a readable line length; cards do not
+  become edge-to-edge blocks with cramped internal padding.
+- [ ] Flashcard and tutor actions remain touch-friendly; textarea and send action
+  do not become too narrow.
+- [ ] The fixed mobile bottom navigation is absent; no reserved bottom padding
+  leaves an unexplained blank band.
+- [ ] Validate 768px portrait and landscape separately; no clipped heading,
+  lesson content, source reference, or sticky header controls.
 
-## Accessibility and quality gates
-- [ ] Skip links and landmark navigation remain available at all sizes.
-- [ ] Heading hierarchy stays valid and consistent across screens.
-- [ ] Color contrast is passable in light and dark states used by the app shell.
-- [ ] Reduced-motion preferences are respected.
-- [ ] Input labels are fully visible and associated correctly.
-- [ ] Forms remain usable with keyboard-only navigation.
+## 1024px tablet landscape / compact laptop
 
-## Release requirement
-The app is not release-ready until all checklist items pass at the required widths for the planned user flows and the critical screens have been manually validated in a browser/device matrix.
+- [ ] Header navigation and utility controls remain on a stable row or wrap
+  cleanly without overlap.
+- [ ] Topic body is centered and does not stretch past a comfortable reading
+  measure; long source excerpts remain scannable.
+- [ ] Tutor transcript and composer retain usable proportions; no horizontal
+  scrolling is required to reach Send.
+- [ ] Multiple lesson selectors wrap cleanly when titles are long.
+- [ ] Keyboard navigation can traverse tabs, topic actions, and the current panel
+  in a logical order.
+- [ ] Test at 1024px both with English LTR and Arabic RTL.
+
+## 1440px desktop
+
+- [ ] Main content remains centered within the 1152px shell instead of stretching
+  to the full viewport; no large, unbalanced empty columns appear.
+- [ ] Topic notes, objectives, tutor responses, and source excerpts remain
+  readable and grouped with their headings.
+- [ ] Header navigation, language selector, notifications, profile, and sign-out
+  remain visible without collision.
+- [ ] Tab focus/selection is clear at keyboard focus and does not rely on color
+  alone.
+- [ ] The same content and interactions available on mobile remain available
+  without accidentally displaying the mobile navigation.
+
+## Cross-device functional and accessibility gates
+
+- [ ] Every tab retains its function and data when switching between tabs.
+- [ ] Topic route loads topic details by topic ID; lesson and quiz links use the
+  associated lesson ID.
+- [ ] Flashcard self-ratings update the backend review schedule; failures are
+  visible and do not advance the card.
+- [ ] Quiz generation, tutor conversation creation/message sending, and source
+  loading show loading and error states.
+- [ ] Source tab shows actual excerpt text returned by the API, or a clear
+  no-linked-excerpts state; it never presents chunk IDs as if they were text.
+- [ ] No keyboard traps; tablist uses tab/tabpanel semantics and has visible
+  focus; reduced-motion preference is respected.
+- [ ] PWA installability and offline behavior are checked separately in a
+  production build; the development server is not evidence of PWA acceptance.
+
+## Release record
+
+| Date | Browser / OS | Viewports and orientations | Passed / failed | Issues |
+|---|---|---|---|---|
+| 2026-10-03 | Integrated browser, local Vite app with disposable seeded API data | 360, 768, 1024, 1440px; 900px-high viewport | Smoke checks passed for landing, sign-in, material-to-topic navigation, and authenticated topic view | Topic page had no horizontal document overflow at these widths; topic tabs were at least 44px high; mobile nav was visible at 360px and hidden at 768px+; ArrowRight moved focus/selection; source excerpt rendered; flashcard flip/rating and tab-state retention worked; tutor draft survived tab changes. Arabic, landscape, quiz generation, tutor send, PWA install, offline behavior, and other screens remain unverified. |
+
+Release is blocked until each target viewport and the critical topic flow have
+been exercised in a real browser. A successful TypeScript build alone does not
+count as device acceptance.

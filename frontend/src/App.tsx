@@ -6,8 +6,6 @@ import {
   useLocation,
 } from "react-router-dom";
 
-import FlashcardPage from "./pages/FlashcardPage";
-
 import { useAuth } from "./auth";
 import { useI18n, type Language } from "./i18n";
 import { isOnboarded } from "./lib/onboarding";
@@ -15,6 +13,7 @@ import { Spinner } from "./components/ui";
 import Layout from "./components/Layout";
 import AdminPage from "./pages/AdminPage";
 import DashboardPage from "./pages/DashboardPage";
+import FlashcardPage from "./pages/FlashcardPage";
 import LandingPage from "./pages/LandingPage";
 import LessonPage from "./pages/LessonPage";
 import LoginPage from "./pages/LoginPage";
@@ -29,6 +28,7 @@ import QuizPage from "./pages/QuizPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import SettingsPage from "./pages/SettingsPage";
 import StudyPage from "./pages/StudyPage";
+import TopicPage from "./pages/TopicPage";
 import TutorPage from "./pages/TutorPage";
 
 function RequireAdmin({ children }: { children: ReactNode }) {
@@ -105,7 +105,7 @@ export default function App() {
         <Route path="/materials/:materialId" element={<MaterialDetailPage />} />
         <Route path="/lessons/:lessonId" element={<LessonPage />} />
         <Route path="/lessons/:lessonId/quiz" element={<QuizPage />} />
-        <Route path="/topics/:topicId" element={<LessonPage />} />
+        <Route path="/topics/:topicId" element={<TopicPage />} />
         <Route path="/study/:sessionId" element={<StudyPage />} />
         <Route path="/flashcards" element={<FlashcardPage />} />
         <Route path="/tutor" element={<TutorPage />} />

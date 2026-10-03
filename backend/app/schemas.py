@@ -133,6 +133,7 @@ class GroundingRef(BaseModel):
     chunk_id: int
     index: int
     relevance: float | None = None
+    content: str
 
 
 class TopicOut(ORMModel):
@@ -148,6 +149,9 @@ class TopicOut(ORMModel):
 class TopicDetailOut(TopicOut):
     grounding: list[GroundingRef] = Field(default_factory=list)
     lessons: list[LessonSummary] = Field(default_factory=list)
+    source_material_id: int | None = None
+    source_title: str | None = None
+    source_filename: str | None = None
 
 
 class ChapterOut(ORMModel):

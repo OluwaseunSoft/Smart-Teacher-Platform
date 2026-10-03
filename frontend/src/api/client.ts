@@ -28,6 +28,7 @@ import type {
   Streak,
   StudySession,
   TokenResponse,
+  TopicDetail,
   TopicMastery,
   TutorConversation,
   TutorConversationDetail,
@@ -172,6 +173,8 @@ export const api = {
     }),
 
   listCurriculum: () => request<Curriculum[]>("/curriculum"),
+
+  getTopic: (id: number) => request<TopicDetail>(`/topics/${id}`),
 
   materialCurriculum: (materialId: number) =>
     request<Curriculum>(`/curriculum/materials/${materialId}`),
