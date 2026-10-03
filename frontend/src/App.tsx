@@ -6,6 +6,8 @@ import {
   useLocation,
 } from "react-router-dom";
 
+import FlashcardPage from "./pages/FlashcardPage";
+
 import { useAuth } from "./auth";
 import { useI18n, type Language } from "./i18n";
 import { isOnboarded } from "./lib/onboarding";
@@ -13,8 +15,10 @@ import { Spinner } from "./components/ui";
 import Layout from "./components/Layout";
 import AdminPage from "./pages/AdminPage";
 import DashboardPage from "./pages/DashboardPage";
+import LandingPage from "./pages/LandingPage";
 import LessonPage from "./pages/LessonPage";
 import LoginPage from "./pages/LoginPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import MaterialDetailPage from "./pages/MaterialDetailPage";
 import MaterialsPage from "./pages/MaterialsPage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -66,7 +70,16 @@ export default function App() {
     );
   }
 
-  if (!user) return <LoginPage />;
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
 
   return (
     <Routes>
@@ -92,7 +105,9 @@ export default function App() {
         <Route path="/materials/:materialId" element={<MaterialDetailPage />} />
         <Route path="/lessons/:lessonId" element={<LessonPage />} />
         <Route path="/lessons/:lessonId/quiz" element={<QuizPage />} />
+        <Route path="/topics/:topicId" element={<LessonPage />} />
         <Route path="/study/:sessionId" element={<StudyPage />} />
+        <Route path="/flashcards" element={<FlashcardPage />} />
         <Route path="/tutor" element={<TutorPage />} />
         <Route path="/reviews" element={<ReviewsPage />} />
         <Route path="/planner" element={<PlannerPage />} />

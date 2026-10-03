@@ -27,9 +27,27 @@ createRoot(document.getElementById("root")!).render(
 );
 
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
+  window.addEventListener("load", async () => {
+    try {
+      const registration = await navigator.serviceWorker.register("/sw.js", {
+        scope: "/",
+      });
+
+      registration.addEventListener("updatefound", () => {
+        const installingWorker = registration.installing;
+        if (!installingWorker) return;
+
+        installingWorker.addEventListener("statechange", () => {
+          if (installingWorker.state === "installed") {
+            const isReloadNeeded = navigator.serviceWorker.controller === null;
+            if (isReloadNeeded) {
+              window.location.reload();
+            }
+          }
+        });
+      });
+    } catch {
       /* offline support is best-effort */
-    });
+    }
   });
 }

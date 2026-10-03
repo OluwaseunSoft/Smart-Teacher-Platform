@@ -2,17 +2,52 @@
 
 :root {
   color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  background: #f8fafc;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 body {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: inherit;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+button,
+a,
+input,
+select {
+  min-height: 44px;
 }
 
 :focus-visible {
   outline: 2px solid #4f46e5;
   outline-offset: 2px;
   border-radius: 2px;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+@media (max-width: 767px) {
+  body {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 
 import { useAuth } from "../auth";
 import { Button, Card, ErrorText, Spinner } from "../components/ui";
@@ -117,19 +118,28 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-slate-500">
-          {isSignup ? "Already have an account?" : "New here?"}{" "}
-          <button
-            type="button"
-            onClick={() => {
-              setMode(isSignup ? "login" : "signup");
-              setError("");
-            }}
-            className="font-medium text-indigo-600 hover:underline"
-          >
-            {isSignup ? "Sign in" : "Create an account"}
-          </button>
-        </p>
+        <div className="mt-4 space-y-3 text-center text-sm text-slate-500">
+          {!isSignup && (
+            <div>
+              <Link to="/reset-password" className="font-medium text-indigo-600 hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+          )}
+          <p>
+            {isSignup ? "Already have an account?" : "New here?"}{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setMode(isSignup ? "login" : "signup");
+                setError("");
+              }}
+              className="font-medium text-indigo-600 hover:underline"
+            >
+              {isSignup ? "Sign in" : "Create an account"}
+            </button>
+          </p>
+        </div>
       </Card>
     </div>
   );

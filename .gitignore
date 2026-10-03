@@ -63,3 +63,4 @@ __pycache__/
 .vite/
 frontend/dist/
 *.tsbuildinfo
+*.docx

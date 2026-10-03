@@ -1,5 +1,15 @@
-const CACHE = "suhail-v1";
+const CACHE = "suhail-v2";
 const PRECACHE = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg"];
+const FALLBACK_HTML = "/index.html";
+
+function cacheResponse(request, response) {
+  if (!response || response.status !== 200 || response.type !== "basic") {
+    return;
+  }
+
+  const copy = response.clone();
+  caches.open(CACHE).then((cache) => cache.put(request, copy));
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -29,20 +39,41 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith("/api/")) return;
+
+  if (url.pathname.startsWith("/api/")) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) cacheResponse(request, response);
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || new Response(null, { status: 503 }))),
+    );
+    return;
+  }
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) cacheResponse(request, response);
+          return response;
+        })
+        .catch(() => caches.match(FALLBACK_HTML)),
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request)
+      const fetched = fetch(request)
         .then((response) => {
-          if (response.ok && response.type === "basic") {
-            const copy = response.clone();
-            caches.open(CACHE).then((cache) => cache.put(request, copy));
-          }
+          if (response.ok) cacheResponse(request, response);
           return response;
         })
-        .catch(() => caches.match("/index.html"));
+        .catch(() => cached || caches.match(FALLBACK_HTML));
+
+      return cached || fetched;
     }),
   );
 });

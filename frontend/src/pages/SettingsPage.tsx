@@ -17,6 +17,11 @@ export default function SettingsPage() {
     (user?.language as Language) ?? "en",
   );
   const [timezone, setTimezone] = useState(user?.timezone ?? "");
+  const [privacy, setPrivacy] = useState({
+    analytics: true,
+    reminders: true,
+    personalizedAI: true,
+  });
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -42,6 +47,36 @@ export default function SettingsPage() {
       setBusy(false);
     }
   }
+
+  const exportData = () => {
+    const payload = {
+      display_name: name,
+      grade,
+      language,
+      timezone,
+      privacy,
+      exported_at: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "suhail-data-export.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const deleteData = () => {
+    if (!window.confirm("This will permanently clear your local profile data. Continue?")) {
+      return;
+    }
+    setName("");
+    setGrade("");
+    setTimezone("");
+    setSaved(true);
+  };
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
@@ -127,19 +162,61 @@ export default function SettingsPage() {
             />
           </div>
 
+          <fieldset className="space-y-3">
+            <legend className="text-sm font-medium text-slate-700">Privacy controls</legend>
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600">
+              <span>Allow analytics</span>
+              <input
+                type="checkbox"
+                checked={privacy.analytics}
+                onChange={(e) =>
+                  setPrivacy((prev) => ({ ...prev, analytics: e.target.checked }))
+                }
+              />
+            </label>
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600">
+              <span>Personalized reminders</span>
+              <input
+                type="checkbox"
+                checked={privacy.reminders}
+                onChange={(e) =>
+                  setPrivacy((prev) => ({ ...prev, reminders: e.target.checked }))
+                }
+              />
+            </label>
+            <label className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600">
+              <span>Use my data for AI personalization</span>
+              <input
+                type="checkbox"
+                checked={privacy.personalizedAI}
+                onChange={(e) =>
+                  setPrivacy((prev) => ({ ...prev, personalizedAI: e.target.checked }))
+                }
+              />
+            </label>
+          </fieldset>
+
           <ErrorText>{error}</ErrorText>
           {saved && <p className="text-sm text-emerald-600">{t("settings.saved")}</p>}
 
-          <Button type="submit" disabled={busy}>
-            {busy ? (
-              <span className="flex items-center gap-2">
-                <Spinner />
-                {t("common.saving")}
-              </span>
-            ) : (
-              t("common.save")
-            )}
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button type="submit" disabled={busy}>
+              {busy ? (
+                <span className="flex items-center gap-2">
+                  <Spinner />
+                  {t("common.saving")}
+                </span>
+              ) : (
+                t("common.save")
+              )}
+            </Button>
+            <Button type="button" variant="secondary" onClick={exportData}>
+              Export data
+            </Button>
+            <Button type="button" variant="secondary" onClick={deleteData}>
+              Delete data
+            </Button>
+          </div>
         </form>
       </Card>
     </div>
