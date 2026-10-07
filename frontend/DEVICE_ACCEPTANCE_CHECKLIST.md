@@ -92,11 +92,32 @@ when completing a release run.
 - [ ] PWA installability and offline behavior are checked separately in a
   production build; the development server is not evidence of PWA acceptance.
 
+## PWA install and launch acceptance
+
+- [ ] In development (`npm run dev`), confirm the development service worker
+  registers and the manifest loads. Use the production preview for offline
+  app-shell checks because Vite development modules require the dev server.
+- [ ] Serve the production build over HTTPS (or localhost) and confirm the
+  browser loads the generated web manifest and service worker without errors.
+- [ ] Confirm the manifest has a `/` start URL and scope, a 192px icon, a 512px
+  icon, and a maskable 512px icon; verify all icon URLs return PNG images.
+- [ ] On supported Android/desktop browsers, confirm the install action is
+  available and the installed app opens without browser toolbar chrome.
+- [ ] On iOS/iPadOS, use Share > Add to Home Screen and verify the 180px Apple
+  touch icon and standalone launch. iOS does not honor the manifest's immersive
+  `fullscreen` display mode.
+- [ ] After one successful online load, disconnect the network and verify the
+  app shell and client-side routes open; confirm API-backed data reports
+  unavailable rather than showing a cached response from another session.
+- [ ] Reconnect and verify API requests recover; deploy a new build and confirm
+  the worker updates and the app reloads onto the new version.
+
 ## Release record
 
 | Date | Browser / OS | Viewports and orientations | Passed / failed | Issues |
 |---|---|---|---|---|
 | 2026-10-03 | Integrated browser, local Vite app with disposable seeded API data | 360, 768, 1024, 1440px; 900px-high viewport | Smoke checks passed for landing, sign-in, material-to-topic navigation, and authenticated topic view | Topic page had no horizontal document overflow at these widths; topic tabs were at least 44px high; mobile nav was visible at 360px and hidden at 768px+; ArrowRight moved focus/selection; source excerpt rendered; flashcard flip/rating and tab-state retention worked; tutor draft survived tab changes. Arabic, landscape, quiz generation, tutor send, PWA install, offline behavior, and other screens remain unverified. |
+| 2026-10-07 | Integrated browser, local Vite production preview | Production app shell smoke test passed; native install checks pending | Manifest and active service worker loaded; install icons returned 200; offline `/login` returned the app shell; no API URLs were cached. Android/desktop install prompt behavior and iOS Add to Home Screen remain unverified. |
 
 Release is blocked until each target viewport and the critical topic flow have
 been exercised in a real browser. A successful TypeScript build alone does not

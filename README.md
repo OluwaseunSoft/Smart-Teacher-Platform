@@ -107,6 +107,19 @@ http://localhost:8080 and forwards `/api` requests to the backend. The backend
 API and Swagger UI are also available at http://localhost:8000 and
 http://localhost:8000/docs.
 
+The frontend is the installable Progressive Web App; the FastAPI backend remains
+its API and is not independently installable. Production builds include a
+standalone/full-screen web app manifest, home-screen icons, and an offline app
+shell. Install from the browser's install action (or use Share > Add to Home
+Screen on iOS/iPadOS). Installability requires HTTPS in deployed environments;
+localhost is permitted for local testing. The offline shell does not cache
+authenticated API responses, so data-backed features require a network
+connection. The development server enables the PWA service worker so its
+registration and manifest can be tested during development. Because Vite serves
+the app as separate development modules, use `npm run build` followed by
+`npm run preview` to test the actual offline app shell; installable-app behavior
+and caching should be validated against that production build.
+
 ```powershell
 Copy-Item backend\.env.example backend\.env
 docker compose up --build -d

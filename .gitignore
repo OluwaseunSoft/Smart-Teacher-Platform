@@ -62,5 +62,6 @@ __pycache__/
 # Vite / frontend build caches
 .vite/
 frontend/dist/
+frontend/dev-dist/
 *.tsbuildinfo
 *.docx
