@@ -1,19 +1,22 @@
 import { NavLink } from "react-router-dom";
+import { useI18n } from "../i18n";
 
 const NAV_ITEMS = [
-  { to: "/", label: "Dashboard", exact: true },
-  { to: "/library", label: "Library" },
-  { to: "/tutor", label: "Tutor" },
-  { to: "/reviews", label: "Reviews" },
-  { to: "/planner", label: "Planner" },
-  { to: "/progress", label: "Progress" },
+  { to: "/", key: "nav.dashboard", exact: true },
+  { to: "/library", key: "nav.library" },
+  { to: "/tutor", key: "nav.tutor" },
+  { to: "/reviews", key: "nav.reviews" },
+  { to: "/planner", key: "nav.planner" },
+  { to: "/progress", key: "nav.progress" },
 ];
 
 export function ResponsiveNav() {
+  const { t } = useI18n();
+
   return (
-    <nav aria-label="Mobile primary navigation" className="sm:hidden">
+    <nav aria-label={t("nav.primary")} className="md:hidden">
       <ul className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-lg shadow-slate-200/60 backdrop-blur-sm">
-        {NAV_ITEMS.map(({ to, label, exact }) => (
+        {NAV_ITEMS.map(({ to, key, exact }) => (
           <li key={to}>
             <NavLink
               to={to}
@@ -26,7 +29,7 @@ export function ResponsiveNav() {
                 }`
               }
             >
-              {label}
+              {t(key)}
             </NavLink>
           </li>
         ))}

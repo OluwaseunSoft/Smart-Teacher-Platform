@@ -92,7 +92,8 @@ describe("Suhail app accessibility basics", () => {
     renderApp();
 
     expect(await screen.findByText(/Welcome back, Ada/i)).toBeInTheDocument();
-    expect(screen.getByText(/Build a study plan/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Build a study plan" }),
+    ).toBeInTheDocument();
   });
 });
-

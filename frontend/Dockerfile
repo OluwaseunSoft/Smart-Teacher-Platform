@@ -12,6 +12,9 @@ FROM nginx:alpine
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
+RUN test -s /usr/share/nginx/html/manifest.webmanifest \
+    && test -s /usr/share/nginx/html/sw.js \
+    && test -s /usr/share/nginx/html/registerSW.js
 
 EXPOSE 80
 

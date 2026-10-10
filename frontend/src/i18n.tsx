@@ -27,6 +27,7 @@ const en: Dict = {
   "nav.primary": "Primary navigation",
   "nav.skip": "Skip to content",
   "nav.language": "Language",
+  "nav.workspace": "Workspace",
 
   "common.loading": "Loading…",
   "common.error": "Something went wrong",
@@ -192,6 +193,7 @@ const ar: Dict = {
   "nav.primary": "التنقل الرئيسي",
   "nav.skip": "تخطَّ إلى المحتوى",
   "nav.language": "اللغة",
+  "nav.workspace": "مساحة التعلّم",
 
   "common.loading": "جارٍ التحميل…",
   "common.error": "حدث خطأ ما",
