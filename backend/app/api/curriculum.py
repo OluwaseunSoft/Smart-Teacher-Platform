@@ -42,22 +42,24 @@ def _subject_out(subject: Subject) -> SubjectOut:
 
 @router.get("/curriculum", response_model=list[CurriculumOut])
 def list_curriculum(
+    include_archived: bool = False,
     student: Student = Depends(current_student),
     db: Session = Depends(get_db),
 ) -> list[CurriculumOut]:
     material_ids = list(
-        db.scalars(select(Material.id).where(Material.student_id == student.id))
+        db.scalars(
+            select(Material.id)
+            .where(Material.student_id == student.id)
+            .where(Material.archived.is_(True) if include_archived else Material.archived.is_(False))
+        )
     )
     if not material_ids:
         return []
 
-    subjects = list(
-        db.scalars(
-            select(Subject)
-            .where(Subject.material_id.in_(material_ids))
-            .order_by(Subject.order_index)
-        )
-    )
+    subject_stmt = select(Subject).where(Subject.material_id.in_(material_ids))
+    if not include_archived:
+        subject_stmt = subject_stmt.where(Subject.archived.is_(False))
+    subjects = list(db.scalars(subject_stmt.order_by(Subject.order_index)))
     grouped: dict[int, list[Subject]] = {}
     for subject in subjects:
         grouped.setdefault(subject.material_id, []).append(subject)
@@ -75,17 +77,15 @@ def list_curriculum(
 @router.get("/curriculum/materials/{material_id}", response_model=CurriculumOut)
 def material_curriculum(
     material_id: int,
+    include_archived: bool = False,
     student: Student = Depends(current_student),
     db: Session = Depends(get_db),
 ) -> CurriculumOut:
     material = owned_material(db, material_id, student)
-    subjects = list(
-        db.scalars(
-            select(Subject)
-            .where(Subject.material_id == material.id)
-            .order_by(Subject.order_index)
-        )
-    )
+    subject_stmt = select(Subject).where(Subject.material_id == material.id)
+    if not include_archived:
+        subject_stmt = subject_stmt.where(Subject.archived.is_(False))
+    subjects = list(db.scalars(subject_stmt.order_by(Subject.order_index)))
     return CurriculumOut(
         material_id=material.id,
         subjects=[_subject_out(s) for s in subjects],
@@ -120,6 +120,11 @@ def get_topic(
                 index=link.chunk.index if link.chunk is not None else 0,
                 relevance=link.relevance,
                 content=link.chunk.content if link.chunk is not None else "",
+                source_pages=(
+                    link.chunk.source_pages
+                    if link.chunk is not None and link.chunk.source_pages
+                    else []
+                ),
             )
             for link in topic.chunk_links
         ],
@@ -127,4 +132,12 @@ def get_topic(
         source_material_id=material.id,
         source_title=material.title,
         source_filename=material.filename,
+        source_pages=sorted(
+            {
+                page
+                for link in topic.chunk_links
+                if link.chunk is not None
+                for page in (link.chunk.source_pages or [])
+            }
+        ),
     )

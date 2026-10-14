@@ -256,13 +256,29 @@ function AiUsageTab({ locale }: { locale: string }) {
     queryKey: ["admin", "ai-usage"],
     queryFn: () => api.listAiUsage(100),
   });
+  const summary = useQuery({
+    queryKey: ["admin", "ai-usage-summary"],
+    queryFn: api.getAiUsageSummary,
+  });
 
   if (usage.isLoading) return <Spinner label={t("common.loading")} />;
   if (usage.isError)
     return <ErrorText>{(usage.error as Error).message}</ErrorText>;
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+    <div className="space-y-4">
+      {summary.isError && (
+        <ErrorText>{(summary.error as Error).message}</ErrorText>
+      )}
+      {summary.data && (
+        <div className="grid gap-3 sm:grid-cols-4">
+          <Card><p className="text-xs text-slate-500">Total AI calls</p><p className="text-xl font-semibold">{summary.data.calls}</p></Card>
+          <Card><p className="text-xs text-slate-500">Total tokens</p><p className="text-xl font-semibold">{summary.data.prompt_tokens + summary.data.completion_tokens}</p></Card>
+          <Card><p className="text-xs text-slate-500">Estimated AI cost (USD)</p><p className="text-xl font-semibold">${summary.data.estimated_cost_usd.toFixed(4)}</p></Card>
+          <Card><p className="text-xs text-slate-500">Unpriced calls</p><p className="text-xl font-semibold">{summary.data.unpriced_calls}</p></Card>
+        </div>
+      )}
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
       <table className="w-full text-sm">
         <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
           <tr>
@@ -271,6 +287,7 @@ function AiUsageTab({ locale }: { locale: string }) {
             <th scope="col" className="px-4 py-2 text-start">{t("admin.model")}</th>
             <th scope="col" className="px-4 py-2 text-start">{t("admin.operation")}</th>
             <th scope="col" className="px-4 py-2 text-start">{t("admin.tokens")}</th>
+            <th scope="col" className="px-4 py-2 text-start">Est. cost USD</th>
             <th scope="col" className="px-4 py-2 text-start">{t("admin.latency")}</th>
             <th scope="col" className="px-4 py-2 text-start">{t("admin.status")}</th>
           </tr>
@@ -286,6 +303,9 @@ function AiUsageTab({ locale }: { locale: string }) {
               <td className="px-4 py-2 text-slate-600">{row.operation}</td>
               <td className="px-4 py-2 text-slate-600">
                 {row.prompt_tokens + row.completion_tokens}
+              </td>
+              <td className="px-4 py-2 text-slate-600">
+                {row.cost_usd === null ? "Unpriced" : `$${row.cost_usd.toFixed(6)}`}
               </td>
               <td className="px-4 py-2 text-slate-600">
                 {t("admin.ms", { n: row.latency_ms })}
@@ -304,13 +324,14 @@ function AiUsageTab({ locale }: { locale: string }) {
           ))}
           {usage.data?.length === 0 && (
             <tr>
-              <td colSpan={7} className="px-4 py-6 text-center text-slate-500">
+              <td colSpan={8} className="px-4 py-6 text-center text-slate-500">
                 {t("admin.empty")}
               </td>
             </tr>
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

@@ -16,14 +16,17 @@ _WS = re.compile(r"[ \t]+")
 
 
 def extract_pdf(data: bytes) -> str:
+    return "\n\n".join(extract_pdf_pages(data))
+
+
+def extract_pdf_pages(data: bytes) -> list[str]:
     try:
         from pypdf import PdfReader
     except ImportError as exc:  # pragma: no cover
         raise ValueError("pypdf is required to read PDFs.") from exc
 
     reader = PdfReader(io.BytesIO(data))
-    pages = [page.extract_text() or "" for page in reader.pages]
-    return "\n\n".join(pages)
+    return [page.extract_text() or "" for page in reader.pages]
 
 
 def normalize(text: str) -> str:
@@ -73,7 +76,11 @@ def chunk_text(text: str) -> list[str]:
 
 
 def ingest(
-    text: str, *, db: Session | None = None, user_id: int | None = None
+    text: str,
+    *,
+    db: Session | None = None,
+    user_id: int | None = None,
+    pages: list[str] | None = None,
 ) -> list[Chunk]:
     """Chunk + embed text. Embedding failures degrade gracefully.
 
@@ -81,7 +88,16 @@ def ingest(
     (operation ``ingestion.embed``) and committed immediately, since ingestion does
     not otherwise commit.
     """
-    texts = chunk_text(text)
+    if pages is None:
+        texts = chunk_text(text)
+        source_pages = [[] for _ in texts]
+    else:
+        texts = []
+        source_pages = []
+        for page_number, page_text in enumerate(pages, start=1):
+            page_chunks = chunk_text(page_text)
+            texts.extend(page_chunks)
+            source_pages.extend([[page_number] for _ in page_chunks])
     if not texts:
         return []
 
@@ -103,6 +119,13 @@ def ingest(
         pass  # keep None; retrieval falls back to lexical matching
 
     return [
-        Chunk(index=i, content=content, embedding=embedding)
-        for i, (content, embedding) in enumerate(zip(texts, embeddings))
+        Chunk(
+            index=i,
+            content=content,
+            embedding=embedding,
+            source_pages=page_numbers,
+        )
+        for i, (content, embedding, page_numbers) in enumerate(
+            zip(texts, embeddings, source_pages)
+        )
     ]

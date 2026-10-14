@@ -13,6 +13,7 @@ export default function MaterialsPage() {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [error, setError] = useState("");
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const materials = useQuery({
     queryKey: ["materials"],
@@ -24,8 +25,9 @@ export default function MaterialsPage() {
   const create = useMutation({
     mutationFn: async () => {
       if (tab === "file") {
+        setUploadProgress(0);
         if (!file) throw new Error("Choose a PDF or text file.");
-        return api.uploadFile(file, title || undefined);
+        return api.uploadFile(file, title || undefined, setUploadProgress);
       }
       if (!text.trim()) throw new Error("Paste some text first.");
       return api.createTextMaterial(title || "Untitled material", text);
@@ -35,6 +37,7 @@ export default function MaterialsPage() {
       setTitle("");
       setText("");
       setError("");
+      setUploadProgress(null);
       qc.invalidateQueries({ queryKey: ["materials"] });
       navigate(`/materials/${material.id}`);
     },
@@ -97,6 +100,26 @@ export default function MaterialsPage() {
               placeholder="Title (optional)"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
             />
+            {uploadProgress !== null && create.isPending && (
+              <div aria-live="polite">
+                <p className="mb-1 text-sm text-slate-600">
+                  Uploading: {uploadProgress}%
+                </p>
+                <div
+                  role="progressbar"
+                  aria-label="File upload progress"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={uploadProgress}
+                  className="h-2 overflow-hidden rounded bg-slate-100"
+                >
+                  <div
+                    className="h-full bg-indigo-600"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-3">

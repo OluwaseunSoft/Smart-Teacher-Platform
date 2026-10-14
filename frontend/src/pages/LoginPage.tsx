@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [grade, setGrade] = useState("");
+  const [language, setLanguage] = useState<"en" | "ar">("en");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -21,7 +23,14 @@ export default function LoginPage() {
     setBusy(true);
     try {
       if (isSignup) {
-        await signup(email, password, displayName || email.split("@")[0]);
+        if (!grade) throw new Error("Choose your grade to create an account.");
+        await signup(
+          email,
+          password,
+          displayName || email.split("@")[0],
+          Number(grade),
+          language,
+        );
       } else {
         await login(email, password);
       }
@@ -63,6 +72,25 @@ export default function LoginPage() {
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
                 placeholder="Ada Lovelace"
               />
+              <label
+                htmlFor="signup-grade"
+                className="mb-1 mt-3 block text-sm font-medium text-slate-700"
+              >
+                Grade
+              </label>
+              <select id="signup-grade" required value={grade} onChange={(e) => setGrade(e.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                <option value="">Select grade</option>
+                {Array.from({ length: 12 }, (_, index) => index + 1).map((value) => (
+                  <option key={value} value={value}>Grade {value}</option>
+                ))}
+              </select>
+              <label htmlFor="signup-language" className="mb-1 mt-3 block text-sm font-medium text-slate-700">
+                Preferred language
+              </label>
+              <select id="signup-language" value={language} onChange={(e) => setLanguage(e.target.value as "en" | "ar")} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                <option value="en">English</option>
+                <option value="ar">العربية</option>
+              </select>
             </div>
           )}
           <div>

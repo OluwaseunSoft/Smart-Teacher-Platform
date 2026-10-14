@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import prompts
 from app.llm import get_llm
-from app.models import Chapter, Concept, Material, Subject, Topic, TopicChunk
+from app.models import AcademicYear, Chapter, Concept, Material, Subject, Topic, TopicChunk
 from app.services.ai_usage import track_ai
 from app.services.retrieval import rank_chunks
 
@@ -35,14 +36,19 @@ def build_curriculum(db: Session, material: Material) -> list[Concept]:
     if not isinstance(data, dict):
         raise ValueError("Structuring returned an unexpected shape.")
 
-    if data.get("title"):
+    if data.get("title") and not material.corrections_locked:
         material.title = str(data["title"])[:300]
 
     subject = Subject(
         user_id=_owner_user_id(material),
         material_id=material.id,
-        name=str(data.get("title") or material.title)[:200],
+        name=(
+            material.title
+            if material.corrections_locked
+            else str(data.get("title") or material.title)[:200]
+        ),
         language=_language_for(material),
+        academic_year_id=_active_year_id(db, _owner_user_id(material)),
     )
     db.add(subject)
     db.flush()
@@ -149,6 +155,17 @@ def _ground_topic(db: Session, material: Material, topic: Topic) -> None:
 def _owner_user_id(material: Material) -> int | None:
     student = material.student
     return student.user_id if student is not None else None
+
+
+def _active_year_id(db: Session, user_id: int | None) -> int | None:
+    if user_id is None:
+        return None
+    year = db.scalar(
+        select(AcademicYear.id).where(
+            AcademicYear.user_id == user_id, AcademicYear.is_active.is_(True)
+        )
+    )
+    return year
 
 
 def _language_for(material: Material) -> str:

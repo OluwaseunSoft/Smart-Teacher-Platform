@@ -46,6 +46,9 @@ class Material(Base):
     source_type: Mapped[str] = mapped_column(String(20), default="text")
     filename: Mapped[str | None] = mapped_column(String(300), nullable=True)
     raw_text: Mapped[str] = mapped_column(Text, default="")
+    raw_pages: Mapped[list[str]] = mapped_column(JSON, default=list)
+    corrections_locked: Mapped[bool] = mapped_column(Boolean, default=False)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[str] = mapped_column(String(20), default="uploaded")
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
@@ -73,6 +76,7 @@ class Chunk(Base):
     index: Mapped[int] = mapped_column(Integer, default=0)
     content: Mapped[str] = mapped_column(Text)
     embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True)
+    source_pages: Mapped[list[int]] = mapped_column(JSON, default=list)
 
     material: Mapped[Material] = relationship(back_populates="chunks")
 
@@ -275,6 +279,9 @@ class AcademicYear(Base):
     start_date: Mapped[datetime | None] = mapped_column(Date, nullable=True)
     end_date: Mapped[datetime | None] = mapped_column(Date, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
 
@@ -292,6 +299,10 @@ class Subject(Base):
     name: Mapped[str] = mapped_column(String(200))
     language: Mapped[str] = mapped_column(String(5), default="en")
     order_index: Mapped[int] = mapped_column(Integer, default=0)
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    academic_year_id: Mapped[int | None] = mapped_column(
+        ForeignKey("academic_years.id"), nullable=True, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     material: Mapped["Material | None"] = relationship(back_populates="subjects")
@@ -354,6 +365,20 @@ class TopicChunk(Base):
 
     topic: Mapped[Topic] = relationship(back_populates="chunk_links")
     chunk: Mapped["Chunk"] = relationship()
+
+
+class TopicNotes(Base):
+    __tablename__ = "topic_notes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    topic_id: Mapped[int] = mapped_column(ForeignKey("topics.id"), unique=True)
+    notes: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utcnow, onupdate=utcnow
+    )
+
+    topic: Mapped[Topic] = relationship()
 
 
 # ---- Spaced repetition ------------------------------------------------------
@@ -454,6 +479,32 @@ class StudyPlanItem(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
+class PracticeExam(Base):
+    __tablename__ = "practice_exams"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    chapter_id: Mapped[int] = mapped_column(ForeignKey("chapters.id"), index=True)
+    question_ids: Mapped[list[int]] = mapped_column(JSON, default=list)
+    duration_seconds: Mapped[int] = mapped_column(Integer)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    submitted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    answers: Mapped[dict] = mapped_column(JSON, default=dict)
+    review: Mapped[list] = mapped_column(JSON, default=list)
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    chapter: Mapped[Chapter] = relationship()
+
+
+class StudyTimeEvent(Base):
+    __tablename__ = "study_time_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    duration_seconds: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 # ---- Gamification -----------------------------------------------------------
 class Achievement(Base):
     __tablename__ = "achievements"
@@ -526,6 +577,7 @@ class AIUsageLog(Base):
     operation: Mapped[str] = mapped_column(String(80), default="")
     prompt_tokens: Mapped[int] = mapped_column(Integer, default=0)
     completion_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True, default=None)
     latency_ms: Mapped[int] = mapped_column(Integer, default=0)
     status: Mapped[str] = mapped_column(String(20), default="ok")
     error: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -25,6 +25,9 @@ An uploaded source of study content.
 | source_type | str | `pdf` \| `text` |
 | filename | str? | original name |
 | raw_text | Text | full extracted text |
+| raw_pages | JSON | extracted PDF text by page, used for page-level citations |
+| corrections_locked | bool | preserves student corrections during later processing |
+| archived | bool | excludes material from the active curriculum |
 | status | str | `uploaded` → `processing` → `ready` \| `failed` |
 | error | Text? | failure reason |
 | created_at / updated_at | datetime | |
@@ -39,6 +42,7 @@ A retrievable slice of a material; carries its embedding.
 | index | int | position in source |
 | content | Text | chunk text |
 | embedding | JSON | list[float], nullable |
+| source_pages | JSON | source PDF page numbers represented by this chunk |
 
 ### Concept
 A teachable unit discovered by structuring.
@@ -131,6 +135,15 @@ Student 1─* Attempt *─1 Question
 Student 1─* Mastery *─1 Concept
 Student 1─* StudySession *─1 Material
 ```
+
+`TopicNotes` stores persisted topic summaries, key points, and flashcards with
+source-page references. `PracticeExam` stores a student's timed exam, answers,
+submission time, score, and review. `StudyTimeEvent` records study duration.
+`AcademicYear` owns a student's year labels; subjects assigned to an older year
+remain archived and searchable.
+
+`AIUsageLog.cost_usd` is a nullable estimate. A null value means that the model
+has no configured rate and must not be interpreted as zero cost.
 
 ## Mastery update rule (MVP)
 

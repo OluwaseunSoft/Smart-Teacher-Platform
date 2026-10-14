@@ -282,6 +282,16 @@ export default function TopicPage() {
     queryFn: () => api.getLesson(lessonId!),
     enabled: lessonId !== null,
   });
+  const notes = useQuery({
+    queryKey: ["topic", id, "notes"],
+    queryFn: () => api.getTopicNotes(id),
+    enabled: Number.isInteger(id) && id > 0,
+  });
+  const [translatedNotes, setTranslatedNotes] = useState("");
+  const translate = useMutation({
+    mutationFn: (text: string) => api.translateNote(text, "ar"),
+    onSuccess: (result) => setTranslatedNotes(result.translated_text),
+  });
   const createQuiz = useMutation({
     mutationFn: () => api.createQuiz(lessonId!),
     onSuccess: (quiz) =>
@@ -386,6 +396,60 @@ export default function TopicPage() {
         className="min-w-0 focus:outline-none"
       >
           <div className="space-y-4">
+            {notes.isLoading && <Spinner label="Preparing study notes..." />}
+            {notes.isError && <ErrorText>{(notes.error as Error).message}</ErrorText>}
+            {notes.data && (
+              <>
+                <Card>
+                  <h2 className="text-lg font-semibold">Quick summary</h2>
+                  <p className="mt-2 text-sm leading-7 text-slate-700">
+                    {notes.data.notes.summary.text || item.summary}
+                  </p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    Source pages: {notes.data.notes.summary.source_pages.join(", ") || "not available"}
+                  </p>
+                </Card>
+                <Card>
+                  <h2 className="text-lg font-semibold">Key points</h2>
+                  <ul className="mt-3 list-disc space-y-3 ps-5 text-sm leading-7">
+                    {notes.data.notes.key_points.map((point, index) => (
+                      <li key={`${index}:${point.text}`}>
+                        {point.text}
+                        <span className="ms-2 text-xs text-slate-500">
+                          Source page{point.source_pages.length === 1 ? "" : "s"}: {point.source_pages.join(", ") || "not available"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+                <Card>
+                  <h2 className="text-lg font-semibold">Flashcards</h2>
+                  {notes.data.notes.flashcards.map((card) => (
+                    <div key={card.front} className="mt-2 rounded border p-3">
+                      <p className="font-medium">{card.front}</p>
+                      <p className="mt-1 text-sm">{card.back}</p>
+                      <p className="mt-1 text-xs text-slate-500">Source pages: {card.source_pages.join(", ") || "not available"}</p>
+                    </div>
+                  ))}
+                </Card>
+                <Card className="space-y-3">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={translate.isPending || !notes.data.notes.summary.text}
+                    onClick={() => translate.mutate(notes.data!.notes.summary.text)}
+                  >
+                    {translate.isPending ? "Translating..." : "Translate summary to Arabic"}
+                  </Button>
+                  <ErrorText>{translate.error ? translate.error.message : ""}</ErrorText>
+                  {translatedNotes && (
+                    <div lang="ar" dir="rtl" className="rounded bg-slate-50 p-3 leading-8">
+                      {translatedNotes}
+                    </div>
+                  )}
+                </Card>
+              </>
+            )}
             {lesson.isLoading && <Spinner label="Loading notes..." />}
             {lesson.isError && (
               <ErrorText>{(lesson.error as Error).message}</ErrorText>
@@ -513,6 +577,9 @@ export default function TopicPage() {
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="font-medium">
                       Source excerpt {reference.index + 1}
+                      {reference.source_pages.length > 0
+                        ? ` · Page${reference.source_pages.length === 1 ? "" : "s"} ${reference.source_pages.join(", ")}`
+                        : ""}
                     </h3>
                     {reference.relevance !== null && (
                       <span className="text-xs text-slate-500">

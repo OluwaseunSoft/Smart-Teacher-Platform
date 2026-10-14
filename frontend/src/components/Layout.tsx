@@ -35,6 +35,17 @@ export default function Layout() {
     window.scrollTo({ top: 0 });
   }, [location.pathname]);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void api.recordStudyTime(60).catch((error: unknown) => {
+          console.error("Failed to record study time", error);
+        });
+      }
+    }, 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
     <div className="app-shell min-h-screen bg-slate-50 text-slate-900">
       <a

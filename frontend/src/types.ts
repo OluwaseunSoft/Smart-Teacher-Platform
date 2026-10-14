@@ -7,6 +7,7 @@ export interface Material {
   filename: string | null;
   status: MaterialStatus;
   error: string | null;
+  archived: boolean;
   created_at: string;
 }
 
@@ -114,6 +115,7 @@ export interface TopicGrounding {
   index: number;
   relevance: number | null;
   content: string;
+  source_pages: number[];
 }
 
 export interface TopicDetail extends TopicSummary {
@@ -122,6 +124,7 @@ export interface TopicDetail extends TopicSummary {
   source_material_id: number | null;
   source_title: string | null;
   source_filename: string | null;
+  source_pages: number[];
 }
 
 export interface ChapterSummary {
@@ -290,6 +293,16 @@ export interface Dashboard {
   achievements_unlocked: number;
   achievements_total: number;
   active_plan: ActivePlan | null;
+  study_minutes: number;
+  score_trend: { date: string; score: number; attempts: number }[];
+  upcoming_exams: { id: number; title: string; exam_date: string }[];
+  subject_progress: {
+    subject: string;
+    total: number;
+    covered: number;
+    score: number;
+    mastery: number;
+  }[];
 }
 
 export interface AppNotification {
@@ -335,10 +348,55 @@ export interface AIUsageLog {
   operation: string;
   prompt_tokens: number;
   completion_tokens: number;
+  cost_usd: number | null;
   latency_ms: number;
   status: string;
   error: string | null;
   created_at: string;
+}
+
+export interface TopicNotes {
+  topic_id: number;
+  notes: {
+    summary: { text: string; source_pages: number[] };
+    key_points: { text: string; source_pages: number[] }[];
+    flashcards: { front: string; back: string; source_pages: number[] }[];
+  };
+}
+
+export interface StudyTodayItem {
+  topic_id: number;
+  title: string;
+  reason: string;
+  priority: number;
+  due_at: string | null;
+}
+
+export interface PracticeExam {
+  id: number;
+  chapter_id: number;
+  duration_seconds: number;
+  started_at: string;
+  submitted_at: string | null;
+  score: number | null;
+  answers: Record<number, string>;
+  questions: QuizQuestion[];
+  review: QuestionResult[];
+}
+
+export interface AcademicYear {
+  id: number;
+  label: string;
+  is_active: boolean;
+  archived_subjects: number;
+}
+
+export interface AIUsageSummary {
+  calls: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  estimated_cost_usd: number;
+  unpriced_calls: number;
 }
 
 export interface AuditLog {

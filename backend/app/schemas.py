@@ -21,12 +21,24 @@ class MaterialOut(ORMModel):
     filename: str | None = None
     status: str
     error: str | None = None
+    archived: bool = False
     created_at: datetime
 
 
 class MaterialTextIn(BaseModel):
     title: str = Field(min_length=1, max_length=300)
     text: str = Field(min_length=1)
+
+
+class ChapterCorrection(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    topic_ids: list[int]
+
+
+class MaterialCorrectionIn(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=300)
+    subject_name: str | None = Field(default=None, min_length=1, max_length=200)
+    chapters: list[ChapterCorrection] | None = None
 
 
 # ---- Concepts ---------------------------------------------------------------
@@ -88,6 +100,11 @@ class QuizSubmitIn(BaseModel):
     answers: list[AnswerIn]
 
 
+class AnswerCheckIn(BaseModel):
+    question_id: int
+    response: str = Field(max_length=4000)
+
+
 class QuestionResult(BaseModel):
     question_id: int
     correct: bool
@@ -134,6 +151,7 @@ class GroundingRef(BaseModel):
     index: int
     relevance: float | None = None
     content: str
+    source_pages: list[int] = Field(default_factory=list)
 
 
 class TopicOut(ORMModel):
@@ -152,6 +170,7 @@ class TopicDetailOut(TopicOut):
     source_material_id: int | None = None
     source_title: str | None = None
     source_filename: str | None = None
+    source_pages: list[int] = Field(default_factory=list)
 
 
 class ChapterOut(ORMModel):
@@ -268,10 +287,19 @@ class AIUsageOut(ORMModel):
     operation: str
     prompt_tokens: int
     completion_tokens: int
+    cost_usd: float | None = None
     latency_ms: int
     status: str
     error: str | None = None
     created_at: datetime
+
+
+class AIUsageSummaryOut(BaseModel):
+    calls: int
+    prompt_tokens: int
+    completion_tokens: int
+    estimated_cost_usd: float
+    unpriced_calls: int
 
 
 class AuditLogOut(ORMModel):
@@ -463,6 +491,71 @@ class DashboardOut(BaseModel):
     achievements_unlocked: int
     achievements_total: int
     active_plan: ActivePlanOut | None = None
+    study_minutes: int = 0
+    score_trend: list[dict] = Field(default_factory=list)
+    upcoming_exams: list[dict] = Field(default_factory=list)
+    subject_progress: list[dict] = Field(default_factory=list)
+
+
+class TopicNotesOut(BaseModel):
+    topic_id: int
+    notes: dict
+
+
+class TranslationIn(BaseModel):
+    text: str = Field(min_length=1, max_length=20000)
+    target_language: str = Field(default="ar", pattern="^(ar|en)$")
+
+
+class TranslationOut(BaseModel):
+    translated_text: str
+
+
+class StudyTimeIn(BaseModel):
+    duration_seconds: int = Field(ge=1, le=3600)
+
+
+class StudyTodayItem(BaseModel):
+    topic_id: int
+    title: str
+    reason: str
+    priority: int
+    due_at: datetime | None = None
+
+
+class StudyTodayOut(BaseModel):
+    items: list[StudyTodayItem]
+
+
+class PracticeExamCreateIn(BaseModel):
+    duration_minutes: int = Field(default=30, ge=1, le=240)
+
+
+class PracticeExamAnswerIn(BaseModel):
+    answers: dict[int, str] = Field(default_factory=dict)
+
+
+class PracticeExamOut(BaseModel):
+    id: int
+    chapter_id: int
+    duration_seconds: int
+    started_at: datetime
+    submitted_at: datetime | None
+    score: float | None
+    answers: dict[int, str] = Field(default_factory=dict)
+    questions: list[QuestionPublic] = Field(default_factory=list)
+    review: list[QuestionResult] = Field(default_factory=list)
+
+
+class AcademicYearRolloverIn(BaseModel):
+    label: str = Field(min_length=1, max_length=50)
+
+
+class AcademicYearOut(BaseModel):
+    id: int
+    label: str
+    is_active: bool
+    archived_subjects: int = 0
 
 
 # ---- Notifications ----------------------------------------------------------

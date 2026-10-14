@@ -102,7 +102,11 @@ def ordered_topics(
         .join(Chapter, Chapter.id == Topic.chapter_id)
         .join(Subject, Subject.id == Chapter.subject_id)
         .join(Material, Material.id == Subject.material_id)
-        .where(Material.student_id == student_id)
+        .where(
+            Material.student_id == student_id,
+            Material.archived.is_(False),
+            Subject.archived.is_(False),
+        )
     )
     if subject_id is not None:
         stmt = stmt.where(Subject.id == subject_id)

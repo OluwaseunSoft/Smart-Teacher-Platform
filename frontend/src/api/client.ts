@@ -3,6 +3,8 @@ import type {
   AdminUserPage,
   AdminUserUpdate,
   AIUsageLog,
+  AIUsageSummary,
+  AcademicYear,
   AppNotification,
   AuditLog,
   Concept,
@@ -18,6 +20,7 @@ import type {
   Plan,
   PlanDetail,
   PlanItem,
+  PracticeExam,
   PlanSummary,
   ProfileUpdate,
   Quiz,
@@ -29,6 +32,8 @@ import type {
   StudySession,
   TokenResponse,
   TopicDetail,
+  TopicNotes,
+  StudyTodayItem,
   TopicMastery,
   TutorConversation,
   TutorConversationDetail,
@@ -72,6 +77,8 @@ export const api = {
     email: string;
     password: string;
     display_name: string;
+    grade: number;
+    language: "en" | "ar";
   }) =>
     request<TokenResponse>("/auth/signup", {
       method: "POST",
@@ -115,11 +122,49 @@ export const api = {
       body: JSON.stringify({ title, text }),
     }),
 
-  uploadFile: (file: File, title?: string) => {
+  uploadFile: (
+    file: File,
+    title?: string,
+    onProgress?: (percent: number) => void,
+  ) => {
     const form = new FormData();
     form.append("file", file);
     if (title) form.append("title", title);
-    return request<Material>("/materials", { method: "POST", body: form });
+    return new Promise<Material>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${BASE}/materials`);
+      const token = getAccessToken();
+      if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          onProgress?.(Math.round((event.loaded / event.total) * 100));
+        }
+      };
+      xhr.onerror = () => reject(new Error("File upload failed."));
+      xhr.onload = () => {
+        if (xhr.status === 401) {
+          clearTokens();
+          window.dispatchEvent(new Event("suhail:unauthorized"));
+        }
+        let body: unknown;
+        try {
+          body = JSON.parse(xhr.responseText);
+        } catch {
+          reject(new Error(xhr.statusText || "Invalid upload response."));
+          return;
+        }
+        if (xhr.status < 200 || xhr.status >= 300) {
+          const detail =
+            typeof body === "object" && body !== null && "detail" in body
+              ? String(body.detail)
+              : xhr.statusText;
+          reject(new Error(detail));
+          return;
+        }
+        resolve(body as Material);
+      };
+      xhr.send(form);
+    });
   },
 
   processMaterial: (id: number) =>
@@ -127,6 +172,22 @@ export const api = {
 
   deleteMaterial: (id: number) =>
     request<void>(`/materials/${id}`, { method: "DELETE" }),
+
+  correctMaterial: (
+    id: number,
+    payload: {
+      title?: string;
+      subject_name?: string;
+      chapters?: { title: string; topic_ids: number[] }[];
+    },
+  ) =>
+    request<Material>(`/materials/${id}/corrections`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+
+  archiveMaterial: (id: number) =>
+    request<Material>(`/materials/${id}/archive`, { method: "POST" }),
 
   listConcepts: (id: number) => request<Concept[]>(`/materials/${id}/concepts`),
 
@@ -155,6 +216,12 @@ export const api = {
       body: JSON.stringify({ answers }),
     }),
 
+  checkAnswer: (lessonId: number, questionId: number, response: string) =>
+    request<import("../types").QuestionResult>(`/quizzes/${lessonId}/answer`, {
+      method: "POST",
+      body: JSON.stringify({ question_id: questionId, response }),
+    }),
+
   createSession: (materialId: number) =>
     request<StudySession>("/sessions", {
       method: "POST",
@@ -175,6 +242,14 @@ export const api = {
   listCurriculum: () => request<Curriculum[]>("/curriculum"),
 
   getTopic: (id: number) => request<TopicDetail>(`/topics/${id}`),
+
+  getTopicNotes: (id: number) => request<TopicNotes>(`/topics/${id}/notes`),
+
+  translateNote: (text: string, targetLanguage: "ar" | "en" = "ar") =>
+    request<{ translated_text: string }>("/translate", {
+      method: "POST",
+      body: JSON.stringify({ text, target_language: targetLanguage }),
+    }),
 
   materialCurriculum: (materialId: number) =>
     request<Curriculum>(`/curriculum/materials/${materialId}`),
@@ -268,6 +343,48 @@ export const api = {
 
   getDashboard: () => request<Dashboard>("/gamification/dashboard"),
 
+  getStudyToday: () => request<{ items: StudyTodayItem[] }>("/study-today"),
+
+  recordStudyTime: (durationSeconds: number) =>
+    request<void>("/study-time", {
+      method: "POST",
+      body: JSON.stringify({ duration_seconds: durationSeconds }),
+    }),
+
+  rolloverAcademicYear: (label: string) =>
+    request<AcademicYear>("/academic-years/rollover", {
+      method: "POST",
+      body: JSON.stringify({ label }),
+    }),
+
+  listAcademicYears: () => request<AcademicYear[]>("/academic-years"),
+
+  searchArchivedYear: (yearId: number, q: string) =>
+    request<{ subject: string; chapter: string; topic_id: number; topic: string }[]>(
+      `/academic-years/${yearId}/search?q=${encodeURIComponent(q)}`,
+    ),
+
+  createPracticeExam: (chapterId: number, durationMinutes: number) =>
+    request<PracticeExam>(`/chapters/${chapterId}/practice-exams`, {
+      method: "POST",
+      body: JSON.stringify({ duration_minutes: durationMinutes }),
+    }),
+
+  getPracticeExam: (examId: number) =>
+    request<PracticeExam>(`/practice-exams/${examId}`),
+
+  savePracticeExamAnswers: (examId: number, answers: Record<number, string>) =>
+    request<void>(`/practice-exams/${examId}/answers`, {
+      method: "PATCH",
+      body: JSON.stringify({ answers }),
+    }),
+
+  submitPracticeExam: (examId: number, answers: Record<number, string>) =>
+    request<PracticeExam>(`/practice-exams/${examId}/submit`, {
+      method: "POST",
+      body: JSON.stringify({ answers }),
+    }),
+
   listNotifications: (unreadOnly = false, limit = 50) =>
     request<NotificationPage>(
       `/notifications?unread_only=${unreadOnly}&limit=${limit}`,
@@ -298,6 +415,9 @@ export const api = {
 
   listAiUsage: (limit = 50) =>
     request<AIUsageLog[]>(`/admin/ai-usage?limit=${limit}`),
+
+  getAiUsageSummary: () =>
+    request<AIUsageSummary>("/admin/ai-usage/summary"),
 
   listAuditLogs: (limit = 50) =>
     request<AuditLog[]>(`/admin/audit-logs?limit=${limit}`),

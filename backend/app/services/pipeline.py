@@ -18,6 +18,11 @@ def process_material(db: Session, material: Material) -> Material:
 
     try:
         # 1. Read
+        if material.corrections_locked and material.chunks:
+            material.status = "ready"
+            db.commit()
+            db.refresh(material)
+            return material
         material.subjects.clear()
         material.concepts.clear()
         db.flush()
@@ -26,7 +31,10 @@ def process_material(db: Session, material: Material) -> Material:
         student = material.student
         user_id = student.user_id if student is not None else None
         for chunk in ingestion.ingest(
-            material.raw_text, db=db, user_id=user_id
+            material.raw_text,
+            db=db,
+            user_id=user_id,
+            pages=material.raw_pages or None,
         ):
             chunk.material_id = material.id
             db.add(chunk)

@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 
 import { api } from "../api/client";
 import { useAuth } from "../auth";
@@ -10,6 +12,7 @@ const GRADES = Array.from({ length: 12 }, (_, i) => i + 1);
 export default function SettingsPage() {
   const { user, refresh } = useAuth();
   const { t, setLanguage } = useI18n();
+  const queryClient = useQueryClient();
 
   const [name, setName] = useState(user?.display_name ?? "");
   const [grade, setGrade] = useState<number | "">(user?.grade ?? "");
@@ -25,6 +28,27 @@ export default function SettingsPage() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [academicYearLabel, setAcademicYearLabel] = useState("");
+  const [archiveSearch, setArchiveSearch] = useState("");
+  const [selectedYearId, setSelectedYearId] = useState<number | null>(null);
+  const years = useQuery({
+    queryKey: ["academic-years"],
+    queryFn: api.listAcademicYears,
+  });
+  const archivedSearch = useQuery({
+    queryKey: ["academic-years", selectedYearId, "search", archiveSearch],
+    queryFn: () => api.searchArchivedYear(selectedYearId!, archiveSearch),
+    enabled: selectedYearId !== null && archiveSearch.trim().length > 0,
+  });
+  const rollover = useMutation({
+    mutationFn: () => api.rolloverAcademicYear(academicYearLabel.trim()),
+    onSuccess: () => {
+      setAcademicYearLabel("");
+      void queryClient.invalidateQueries({ queryKey: ["academic-years"] });
+      void queryClient.invalidateQueries({ queryKey: ["curriculum"] });
+      void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -218,6 +242,63 @@ export default function SettingsPage() {
             </Button>
           </div>
         </form>
+      </Card>
+      <Card className="space-y-4">
+        <h2 className="text-lg font-semibold">Academic year</h2>
+        <p className="text-sm text-slate-600">
+          Start a new year to archive current subjects without deleting previous work.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <input
+            aria-label="New academic year label"
+            placeholder="e.g. 2026–2027"
+            value={academicYearLabel}
+            onChange={(event) => setAcademicYearLabel(event.target.value)}
+            className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+          <Button
+            disabled={rollover.isPending || !academicYearLabel.trim()}
+            onClick={() => rollover.mutate()}
+          >
+            {rollover.isPending ? "Archiving..." : "Start new year"}
+          </Button>
+        </div>
+        <ErrorText>{rollover.error ? rollover.error.message : ""}</ErrorText>
+        {years.data?.map((year) => (
+          <div key={year.id} className="space-y-2 rounded-lg border p-3">
+            <p className="font-medium">
+              {year.label} {year.is_active ? "(current)" : "(archived)"}
+            </p>
+            {!year.is_active && (
+              <>
+                <label className="block text-sm">
+                  Search archived subjects
+                  <input
+                    value={selectedYearId === year.id ? archiveSearch : ""}
+                    onFocus={() => setSelectedYearId(year.id)}
+                    onChange={(event) => {
+                      setSelectedYearId(year.id);
+                      setArchiveSearch(event.target.value);
+                    }}
+                    className="mt-1 w-full rounded border px-3 py-2"
+                  />
+                </label>
+                {selectedYearId === year.id && archivedSearch.isError && (
+                  <ErrorText>{(archivedSearch.error as Error).message}</ErrorText>
+                )}
+                {selectedYearId === year.id && archivedSearch.data?.map((entry) => (
+                  <Link
+                    key={entry.topic_id}
+                    to={`/topics/${entry.topic_id}`}
+                    className="block text-sm text-blue-700 hover:underline"
+                  >
+                    {entry.subject} · {entry.chapter} · {entry.topic}
+                  </Link>
+                ))}
+              </>
+            )}
+          </div>
+        ))}
       </Card>
     </div>
   );

@@ -9,6 +9,7 @@ from app.db import get_db
 from app.llm import LLMError
 from app.models import Attempt, Lesson, Question, Student
 from app.schemas import (
+    AnswerCheckIn,
     ConceptMasteryOut,
     QuestionResult,
     QuizResultOut,
@@ -17,6 +18,39 @@ from app.schemas import (
 from app.services import adaptive, assessment, gamification, notifications, repetition
 
 router = APIRouter(prefix="/api/quizzes", tags=["quizzes"])
+
+
+@router.post("/{lesson_id}/answer", response_model=QuestionResult)
+def check_answer(
+    lesson_id: int,
+    payload: AnswerCheckIn,
+    student: Student = Depends(current_student),
+    db: Session = Depends(get_db),
+) -> QuestionResult:
+    lesson = db.get(Lesson, lesson_id)
+    if lesson is None:
+        raise HTTPException(status_code=404, detail="Lesson not found")
+    owned_material(db, lesson.material_id, student)
+    question = db.scalar(
+        select(Question).where(
+            Question.id == payload.question_id,
+            Question.lesson_id == lesson_id,
+        )
+    )
+    if question is None:
+        raise HTTPException(status_code=404, detail="Question not found")
+    try:
+        correct, explanation = assessment.grade_answer(
+            question, payload.response, db=db, user_id=student.user_id
+        )
+    except LLMError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return QuestionResult(
+        question_id=question.id,
+        correct=correct,
+        correct_answer=question.answer,
+        explanation=explanation,
+    )
 
 
 @router.post("/{lesson_id}/submit", response_model=QuizResultOut)

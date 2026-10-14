@@ -24,6 +24,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import PlannerPage from "./pages/PlannerPage";
 import ProgressPage from "./pages/ProgressPage";
+import PracticeExamPage from "./pages/PracticeExamPage";
 import QuizPage from "./pages/QuizPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import SettingsPage from "./pages/SettingsPage";
@@ -105,6 +106,7 @@ export default function App() {
         <Route path="/materials/:materialId" element={<MaterialDetailPage />} />
         <Route path="/lessons/:lessonId" element={<LessonPage />} />
         <Route path="/lessons/:lessonId/quiz" element={<QuizPage />} />
+        <Route path="/practice-exams/:examId" element={<PracticeExamPage />} />
         <Route path="/topics/:topicId" element={<TopicPage />} />
         <Route path="/study/:sessionId" element={<StudyPage />} />
         <Route path="/flashcards" element={<FlashcardPage />} />

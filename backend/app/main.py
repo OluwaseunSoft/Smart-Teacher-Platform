@@ -18,6 +18,7 @@ from app.api import (
     quizzes,
     reviews,
     sessions,
+    student_features,
     tutor,
 )
 from app.config import settings
@@ -58,6 +59,7 @@ app.include_router(tutor.router)
 app.include_router(planner.router)
 app.include_router(gamification.router)
 app.include_router(notifications.router)
+app.include_router(student_features.router)
 
 
 @app.get("/api/health", tags=["health"])

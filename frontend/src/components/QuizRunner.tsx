@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 
 import { api } from "../api/client";
-import type { Quiz, QuizResult } from "../types";
+import type { QuestionResult, Quiz, QuizResult } from "../types";
 import { Button, Card, ErrorText, Spinner } from "./ui";
 
 interface Props {
@@ -20,6 +20,7 @@ export default function QuizRunner({
 }: Props) {
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [result, setResult] = useState<QuizResult | null>(null);
+  const [feedback, setFeedback] = useState<Record<number, QuestionResult>>({});
   const resultRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,6 +38,31 @@ export default function QuizRunner({
       ),
     onSuccess: setResult,
   });
+  const check = useMutation({
+    mutationFn: ({
+      questionId,
+      response,
+    }: {
+      questionId: number;
+      response: string;
+    }) => api.checkAnswer(lessonId, questionId, response),
+    onSuccess: (answer) =>
+      setFeedback((current) => ({ ...current, [answer.question_id]: answer })),
+  });
+
+  function setAnswer(questionId: number, response: string) {
+    setAnswers((current) => ({ ...current, [questionId]: response }));
+    setFeedback((current) => {
+      const next = { ...current };
+      delete next[questionId];
+      return next;
+    });
+  }
+
+  function checkAnswer(questionId: number) {
+    const response = answers[questionId]?.trim();
+    if (response) check.mutate({ questionId, response });
+  }
 
   if (result) {
     const resultById = new Map(result.results.map((r) => [r.question_id, r]));
@@ -138,9 +164,10 @@ export default function QuizRunner({
                     type="radio"
                     name={`q-${q.id}`}
                     checked={answers[q.id] === opt}
-                    onChange={() =>
-                      setAnswers((a) => ({ ...a, [q.id]: opt }))
-                    }
+                    onChange={() => {
+                      setAnswer(q.id, opt);
+                      check.mutate({ questionId: q.id, response: opt });
+                    }}
                     className="accent-indigo-600"
                   />
                   {opt}
@@ -151,18 +178,27 @@ export default function QuizRunner({
             <textarea
               rows={3}
               value={answers[q.id] ?? ""}
-              onChange={(e) =>
-                setAnswers((a) => ({ ...a, [q.id]: e.target.value }))
-              }
+              onChange={(e) => setAnswer(q.id, e.target.value)}
+              onBlur={() => checkAnswer(q.id)}
               aria-label={`Answer for question ${i + 1}`}
               placeholder="Type your answer..."
               className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500"
             />
           )}
+          {feedback[q.id] && (
+            <p
+              role="status"
+              className={`text-sm ${feedback[q.id].correct ? "text-emerald-700" : "text-red-700"}`}
+            >
+              {feedback[q.id].correct ? "Correct." : "Not quite."}{" "}
+              {feedback[q.id].explanation}
+            </p>
+          )}
         </Card>
       ))}
 
       <ErrorText>{submit.error ? (submit.error as Error).message : ""}</ErrorText>
+      <ErrorText>{check.error ? (check.error as Error).message : ""}</ErrorText>
 
       <div className="flex items-center gap-3">
         <Button onClick={() => submit.mutate()} disabled={submit.isPending}>

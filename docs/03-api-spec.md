@@ -25,6 +25,8 @@ uploads (`multipart/form-data`). Errors use FastAPI's shape:
 | GET | `/api/materials` | List materials (newest first). |
 | GET | `/api/materials/{id}` | Get one material. |
 | POST | `/api/materials/{id}/process` | Run the full pipeline (ingest → structure → teach). Sets `status`. |
+| PATCH | `/api/materials/{id}/corrections` | Save student-edited title, subject, chapter, and topic grouping; corrections are protected from later processing. |
+| POST | `/api/materials/{id}/archive` | Archive a material. |
 | GET | `/api/materials/{id}/concepts` | List concepts in curriculum order. |
 | GET | `/api/materials/{id}/lessons` | List lessons (with concept info). |
 | DELETE | `/api/materials/{id}` | Delete a material and all dependents. |
@@ -64,8 +66,24 @@ Material response:
 | GET | `/api/topics/{id}` | Get topic details, associated lessons, and source excerpts. |
 
 The topic response includes `grounding` references with the source chunk's
-`content`, `index`, and `relevance`, plus source material metadata. This endpoint
-is scoped to the authenticated student's materials.
+`content`, `index`, `relevance`, and `source_pages`, plus source material
+metadata. This endpoint is scoped to the authenticated student's materials.
+
+## Student study features
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/topics/{id}/notes` | Get or create topic summary, key points, and flashcards with source-page references. |
+| POST | `/api/translate` | Translate a note; Arabic translations retain English technical terms in brackets. |
+| GET | `/api/study-today` | List due reviews and incorrectly answered topics, with weaker topics prioritized. |
+| POST | `/api/study-time` | Record a bounded study-time event for dashboard totals. |
+| POST | `/api/academic-years/rollover` | Archive current subjects and start a new academic year. |
+| GET | `/api/academic-years` | List the student's academic years. |
+| GET | `/api/academic-years/{year_id}/search?q=...` | Search archived subjects, chapters, and topics. |
+| POST | `/api/chapters/{chapter_id}/practice-exams` | Start a timed chapter exam. |
+| GET | `/api/practice-exams/{exam_id}` | Get exam state and, after submission, the review. |
+| PATCH | `/api/practice-exams/{exam_id}/answers` | Save exam answers. |
+| POST | `/api/practice-exams/{exam_id}/submit` | Submit an exam; expired exams are auto-submitted. |
 
 ## Lessons
 
@@ -105,6 +123,7 @@ Quiz response (**answers omitted**):
 
 | Method | Path | Description |
 |---|---|---|
+| POST | `/api/quizzes/{lesson_id}/answer` | Check one answer immediately and return feedback. |
 | POST | `/api/quizzes/{lesson_id}/submit` | Submit answers, grade, update mastery. |
 
 Request:
@@ -229,7 +248,7 @@ unlock automatically when their criteria are met; an unlock also raises a notifi
 |---|---|---|
 | GET | `/api/gamification/streak` | Current/longest streak and today's activity count. |
 | GET | `/api/gamification/achievements` | Achievement catalog with `unlocked` / `unlocked_at`. |
-| GET | `/api/gamification/dashboard` | Aggregated progress: streak, topic coverage, average mastery, due reviews, achievements, active plan. |
+| GET | `/api/gamification/dashboard` | Aggregated progress including streak, topic coverage, mastery, due reviews, achievements, active plan, study time, score trend, and upcoming exams. |
 
 ## Notifications
 
@@ -249,6 +268,8 @@ automatically for every generation call (structuring, teaching, quiz generation,
 short-answer grading, tutor replies, adaptive messages) **and every embedding call**
 (ingestion, retrieval) with provider, model, latency, token counts where the
 provider reports them, and error status.
+AI cost totals are estimates based on maintained per-model rates; unknown hosted
+models are reported as unpriced rather than treated as zero-cost.
 
 | Method | Path | Description |
 |---|---|---|
@@ -258,6 +279,7 @@ provider reports them, and error status.
 | POST | `/api/admin/users/{id}/deactivate` | Deactivate and revoke sessions (self-deactivation blocked). |
 | POST | `/api/admin/users/{id}/reactivate` | Reactivate a user. |
 | GET | `/api/admin/ai-usage` | Recent AI usage rows (query: `limit`). |
+| GET | `/api/admin/ai-usage/summary` | Aggregate call/token counts and estimated cost, including unpriced calls. |
 | GET | `/api/admin/audit-logs` | Recent audit rows (query: `limit`). |
 
 ## Status codes

@@ -10,6 +10,7 @@ from app.models import AIUsageLog, AuditLog, User, UserSession, utcnow
 from app.schemas import (
     AdminUserUpdateIn,
     AIUsageOut,
+    AIUsageSummaryOut,
     AuditLogOut,
     UserOut,
     UserPage,
@@ -159,6 +160,20 @@ def list_ai_usage(
 ) -> list[AIUsageLog]:
     return list(
         db.scalars(select(AIUsageLog).order_by(AIUsageLog.created_at.desc()).limit(limit))
+    )
+
+
+@router.get("/ai-usage/summary", response_model=AIUsageSummaryOut)
+def ai_usage_summary(db: Session = Depends(get_db)) -> AIUsageSummaryOut:
+    rows = list(db.scalars(select(AIUsageLog)))
+    return AIUsageSummaryOut(
+        calls=len(rows),
+        prompt_tokens=sum(row.prompt_tokens for row in rows),
+        completion_tokens=sum(row.completion_tokens for row in rows),
+        estimated_cost_usd=round(
+            sum(row.cost_usd or 0.0 for row in rows), 6
+        ),
+        unpriced_calls=sum(row.cost_usd is None for row in rows),
     )
 
 

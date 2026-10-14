@@ -157,8 +157,74 @@ def test_topic_detail_includes_grounding(api_client, test_session):
             "index": 2,
             "relevance": 0.9,
             "content": "nucleus content",
+            "source_pages": [],
         }
     ]
+
+
+def test_topic_notes_include_source_pages(api_client, test_session):
+    token = _signup(api_client).json()["access_token"]
+    material_id = _create_material(api_client, token)
+    subject = Subject(material_id=material_id, name="Biology")
+    test_session.add(subject)
+    test_session.commit()
+    chapter = Chapter(subject_id=subject.id, title="Cells")
+    test_session.add(chapter)
+    test_session.commit()
+    topic = Topic(chapter_id=chapter.id, title="Nucleus", summary="Controls the cell.")
+    chunk = Chunk(
+        material_id=material_id,
+        index=0,
+        content="The nucleus controls the cell.",
+        source_pages=[4],
+    )
+    test_session.add_all([topic, chunk])
+    test_session.commit()
+    test_session.add(TopicChunk(topic_id=topic.id, chunk_id=chunk.id, relevance=1.0))
+    test_session.commit()
+
+    response = api_client.get(
+        f"/api/topics/{topic.id}/notes", headers=_auth(token)
+    )
+
+    assert response.status_code == 200
+    notes = response.json()["notes"]
+    assert notes["summary"]["source_pages"] == [4]
+    assert notes["key_points"][0]["source_pages"] == [4]
+    assert notes["flashcards"][0]["source_pages"] == [4]
+
+
+def test_academic_year_rollover_archives_and_searches_topics(api_client, test_session):
+    token = _signup(api_client).json()["access_token"]
+    material_id = _create_material(api_client, token)
+    subject = Subject(material_id=material_id, name="Biology")
+    test_session.add(subject)
+    test_session.commit()
+    chapter = Chapter(subject_id=subject.id, title="Cells")
+    test_session.add(chapter)
+    test_session.commit()
+    topic = Topic(chapter_id=chapter.id, title="Nucleus")
+    test_session.add(topic)
+    test_session.commit()
+
+    response = api_client.post(
+        "/api/academic-years/rollover",
+        json={"label": "2027-2028"},
+        headers=_auth(token),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["is_active"] is True
+    years = api_client.get("/api/academic-years", headers=_auth(token)).json()
+    archived_year_id = next(year["id"] for year in years if not year["is_active"])
+    search = api_client.get(
+        f"/api/academic-years/{archived_year_id}/search",
+        params={"q": "nucleus"},
+        headers=_auth(token),
+    )
+    assert search.status_code == 200
+    assert search.json()[0]["topic_id"] == topic.id
+    assert api_client.get("/api/curriculum", headers=_auth(token)).json() == []
 
 
 def test_curriculum_requires_auth(api_client):

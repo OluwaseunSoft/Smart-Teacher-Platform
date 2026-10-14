@@ -40,6 +40,7 @@ def update_mastery(
     difficulty: int,
     *,
     source: str = "quiz",
+    commit: bool = True,
 ) -> Mastery:
     """Exponentially-weighted mastery update (see docs/02-data-model.md).
 
@@ -76,8 +77,11 @@ def update_mastery(
         )
     )
 
-    db.commit()
-    db.refresh(record)
+    if commit:
+        db.commit()
+        db.refresh(record)
+    else:
+        db.flush()
     return record
 
 
@@ -109,7 +113,11 @@ def topic_mastery_map(db: Session, student_id: int) -> dict[int, float]:
                 Mastery.student_id == student_id,
             ),
         )
-        .where(Material.student_id == student_id)
+        .where(
+            Material.student_id == student_id,
+            Material.archived.is_(False),
+            Subject.archived.is_(False),
+        )
     ).all()
     return {topic_id: round(score or 0.0, 4) for topic_id, score in rows}
 
