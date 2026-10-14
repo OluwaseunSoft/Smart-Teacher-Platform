@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from contextlib import nullcontext
 
 from sqlalchemy import select
@@ -7,22 +8,50 @@ from sqlalchemy.orm import Session
 
 from app import prompts
 from app.llm import get_llm
-from app.models import Lesson, Material, Question
+from app.models import Attempt, Lesson, Material, Question
 from app.services.ai_usage import track_ai
 from app.services.retrieval import retrieve
 
 VALID_TYPES = {"mcq", "short"}
 
 
+class QuizFormatConflict(Exception):
+    """Raised when a quiz cannot safely be replaced after learner attempts."""
+
+
 def generate_quiz(
-    db: Session, lesson: Lesson, *, count: int = 4
+    db: Session,
+    lesson: Lesson,
+    *,
+    count: int = 4,
+    question_format: str | None = None,
 ) -> list[Question]:
     """Generate and persist questions for a lesson (idempotent per lesson)."""
     existing = list(
         db.scalars(select(Question).where(Question.lesson_id == lesson.id))
     )
-    if existing:
+    if existing and (
+        question_format is None
+        or all(
+            (question_format == "single" and q.type == "mcq")
+            or (question_format == "multiple" and q.type == "multi")
+            for q in existing
+        )
+    ):
         return existing
+    if existing:
+        has_attempts = db.scalar(
+            select(Attempt.id)
+            .where(Attempt.question_id.in_([q.id for q in existing]))
+            .limit(1)
+        )
+        if has_attempts is not None:
+            raise QuizFormatConflict(
+                "This quiz has saved attempts and cannot be replaced with a different format."
+            )
+        for question in existing:
+            db.delete(question)
+        db.flush()
 
     material = db.get(Material, lesson.material_id)
     excerpts = retrieve(
@@ -40,7 +69,11 @@ def generate_quiz(
                 {
                     "role": "user",
                     "content": prompts.assessment.assessment_user(
-                        lesson.title, lesson.objectives, excerpts, count=count
+                        lesson.title,
+                        lesson.objectives,
+                        excerpts,
+                        count=count,
+                        question_format=question_format,
                     ),
                 }
             ],
@@ -54,25 +87,59 @@ def generate_quiz(
         if not isinstance(item, dict) or not item.get("prompt"):
             continue
         qtype = str(item.get("type", "mcq")).lower()
-        if qtype not in VALID_TYPES:
+        if qtype == "multiple_choice":
+            qtype = "multi"
+        if question_format == "single":
             qtype = "mcq"
-        options = item.get("options") if qtype == "mcq" else None
-        if qtype == "mcq" and not options:
-            qtype = "short"
+        elif question_format == "multiple":
+            qtype = "multi"
+        elif qtype not in VALID_TYPES | {"multi"}:
+            qtype = "mcq"
+        raw_options = item.get("options") if qtype in {"mcq", "multi"} else None
+        options = (
+            [str(option) for option in raw_options]
+            if isinstance(raw_options, list)
+            else None
+        )
+        answer = item.get("answer", "")
+        if qtype == "multi":
+            if not isinstance(answer, list) or options is None:
+                continue
+            answers = list(dict.fromkeys(str(value) for value in answer))
+            if (
+                len(answers) < 2
+                or not set(answers).issubset(options)
+            ):
+                continue
+            answer = json.dumps(answers)
+        elif qtype == "mcq":
+            if options is None or str(answer) not in options:
+                if question_format is not None:
+                    continue
+                qtype = "short"
+                options = None
+        if question_format == "multiple" and qtype != "multi":
+            continue
+        if question_format == "single" and qtype != "mcq":
+            continue
         questions.append(
             Question(
                 lesson_id=lesson.id,
                 concept_id=lesson.concept_id,
                 type=qtype,
                 prompt=str(item["prompt"]),
-                options=[str(o) for o in options] if options else None,
-                answer=str(item.get("answer", "")),
+                options=options,
+                answer=str(answer),
                 explanation=str(item.get("explanation", "")),
                 difficulty=_difficulty(item.get("difficulty")),
             )
         )
         db.add(questions[-1])
 
+    if question_format is not None and not questions:
+        raise ValueError(
+            f"The generated quiz did not contain valid {question_format}-choice questions."
+        )
     db.commit()
     for q in questions:
         db.refresh(q)
@@ -95,7 +162,19 @@ def grade_answer(
     if not response:
         return False, question.explanation
 
-    if question.type == "mcq":
+    if question.type in {"mcq", "multi"}:
+        if question.type == "multi":
+            try:
+                expected = json.loads(question.answer)
+                selected = json.loads(response)
+            except json.JSONDecodeError:
+                return False, question.explanation
+            if not isinstance(expected, list) or not isinstance(selected, list):
+                return False, question.explanation
+            correct = {_normalize(str(value)) for value in expected} == {
+                _normalize(str(value)) for value in selected
+            }
+            return correct, question.explanation
         correct = _normalize(response) == _normalize(question.answer)
         if not correct and question.options:
             # allow answering by option letter, e.g. "B" or "b)"

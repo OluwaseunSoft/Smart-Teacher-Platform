@@ -12,9 +12,18 @@ def assessment_user(
     excerpts: list[str],
     *,
     count: int = 4,
+    question_format: str | None = None,
 ) -> str:
     source = "\n\n".join(f"[{i + 1}] {t}" for i, t in enumerate(excerpts))
     objectives_text = "\n".join(f"- {o}" for o in objectives) or "(none provided)"
+
+    format_instructions = {
+        "single": 'Create only "mcq" questions, each with exactly one correct option.',
+        "multiple": (
+            'Create only "multi" questions. Each question must have at least two '
+            "correct options and return the answer as an array of exact option texts."
+        ),
+    }.get(question_format, 'Create questions mixing "mcq" (4 options) and "short" (free text).')
 
     return f"""Lesson: {lesson_title}
 Learning objectives:
@@ -23,8 +32,8 @@ Learning objectives:
 Source excerpts:
 {source or "(none)"}
 
-Create exactly {count} questions mixing "mcq" (4 options) and "short" (free text),
-covering a range of difficulty (1 = easy, 5 = hard).
+Create exactly {count} questions. {format_instructions}
+Use a range of difficulty (1 = easy, 5 = hard).
 
 Return JSON:
 {{
@@ -36,6 +45,14 @@ Return JSON:
       "answer": "the exact text of the correct option",
       "explanation": "why",
       "difficulty": 2
+    }},
+    {{
+      "type": "multi",
+      "prompt": "...",
+      "options": ["...", "...", "...", "..."],
+      "answer": ["correct option one", "correct option two"],
+      "explanation": "why",
+      "difficulty": 3
     }},
     {{
       "type": "short",

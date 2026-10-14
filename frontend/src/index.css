@@ -68,6 +68,7 @@ select {
   margin: 1.2em 0 0.5em;
   line-height: 1.25;
 }
+.prose-lesson { text-align: start; }
 .prose-lesson h1 { font-size: 1.6rem; }
 .prose-lesson h2 { font-size: 1.3rem; }
 .prose-lesson h3 { font-size: 1.1rem; }

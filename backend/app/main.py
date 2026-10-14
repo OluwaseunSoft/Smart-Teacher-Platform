@@ -11,6 +11,7 @@ from app.api import (
     curriculum,
     gamification,
     lessons,
+    library,
     mastery,
     materials,
     notifications,
@@ -49,6 +50,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(materials.router)
+app.include_router(library.router)
 app.include_router(lessons.router)
 app.include_router(quizzes.router)
 app.include_router(sessions.router)

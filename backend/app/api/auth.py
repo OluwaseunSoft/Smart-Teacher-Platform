@@ -101,6 +101,8 @@ def login(payload: LoginIn, request: Request, db: Session = Depends(get_db)) -> 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account is deactivated")
 
+    if payload.timezone is not None:
+        user.timezone = payload.timezone
     record_audit(db, actor_user_id=user.id, action="auth.login", target_type="user", target_id=user.id)
     db.commit()
     return _issue_tokens(db, user, request.headers.get("user-agent"))

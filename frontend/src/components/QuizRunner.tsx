@@ -59,6 +59,20 @@ export default function QuizRunner({
     });
   }
 
+  function displayAnswer(response: string, questionType: string): string {
+    if (questionType !== "multi") return response;
+    try {
+      const selected: unknown = JSON.parse(response);
+      return Array.isArray(selected) ? selected.join(", ") : response;
+    } catch {
+      return response;
+    }
+  }
+
+  function correctAnswerText(answer: string, questionType: string): string {
+    return displayAnswer(answer, questionType);
+  }
+
   function checkAnswer(questionId: number) {
     const response = answers[questionId]?.trim();
     if (response) check.mutate({ questionId, response });
@@ -107,13 +121,15 @@ export default function QuizRunner({
               <p className="mt-2 text-sm text-slate-600">
                 Your answer:{" "}
                 <span className={r?.correct ? "text-emerald-700" : "text-red-700"}>
-                  {answers[q.id] || "(blank)"}
+                  {answers[q.id] ? displayAnswer(answers[q.id], q.type) : "(blank)"}
                 </span>
               </p>
               {!r?.correct && (
                 <p className="mt-1 text-sm text-slate-600">
                   Correct answer:{" "}
-                  <span className="font-medium">{r?.correct_answer}</span>
+                  <span className="font-medium">
+                    {r ? correctAnswerText(r.correct_answer, q.type) : ""}
+                  </span>
                 </p>
               )}
               {r?.explanation && (
@@ -174,6 +190,52 @@ export default function QuizRunner({
                 </label>
               ))}
             </div>
+          ) : q.type === "multi" && q.options ? (
+            <fieldset className="mt-3 space-y-2">
+              <legend className="text-xs text-slate-500">
+                Select all that apply.
+              </legend>
+              {q.options.map((opt) => {
+                let selected: string[] = [];
+                try {
+                  selected = JSON.parse(answers[q.id] ?? "[]") as string[];
+                } catch {
+                  selected = [];
+                }
+                const checked = selected.includes(opt);
+                return (
+                  <label
+                    key={opt}
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm ${
+                      checked
+                        ? "border-indigo-400 bg-indigo-50"
+                        : "border-slate-200 hover:bg-slate-50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        const next = checked
+                          ? selected.filter((value) => value !== opt)
+                          : [...selected, opt];
+                        setAnswer(q.id, JSON.stringify(next));
+                      }}
+                      className="accent-indigo-600"
+                    />
+                    {opt}
+                  </label>
+                );
+              })}
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={!answers[q.id]}
+                onClick={() => checkAnswer(q.id)}
+              >
+                Check answer
+              </Button>
+            </fieldset>
           ) : (
             <textarea
               rows={3}

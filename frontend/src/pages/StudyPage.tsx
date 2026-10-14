@@ -107,7 +107,7 @@ export default function StudyPage() {
                     ))}
                   </ul>
                 )}
-                <div className="prose-lesson mt-4 max-w-none">
+                <div dir="auto" className="prose-lesson mt-4 max-w-none">
                   <ReactMarkdown>{action.lesson.content}</ReactMarkdown>
                 </div>
               </Card>

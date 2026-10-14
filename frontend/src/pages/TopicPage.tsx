@@ -93,7 +93,7 @@ function TopicTutor({ topicId }: { topicId: number }) {
             >
               {message.role === "assistant" ? (
                 <>
-                  <div className="prose-lesson">
+                  <div dir="auto" className="prose-lesson">
                     <ReactMarkdown>{message.content}</ReactMarkdown>
                   </div>
                   {message.grounding.length > 0 && (
@@ -413,7 +413,7 @@ export default function TopicPage() {
                   <h2 className="text-lg font-semibold">Key points</h2>
                   <ul className="mt-3 list-disc space-y-3 ps-5 text-sm leading-7">
                     {notes.data.notes.key_points.map((point, index) => (
-                      <li key={`${index}:${point.text}`}>
+                      <li dir="auto" key={`${index}:${point.text}`}>
                         {point.text}
                         <span className="ms-2 text-xs text-slate-500">
                           Source page{point.source_pages.length === 1 ? "" : "s"}: {point.source_pages.join(", ") || "not available"}
@@ -426,8 +426,8 @@ export default function TopicPage() {
                   <h2 className="text-lg font-semibold">Flashcards</h2>
                   {notes.data.notes.flashcards.map((card) => (
                     <div key={card.front} className="mt-2 rounded border p-3">
-                      <p className="font-medium">{card.front}</p>
-                      <p className="mt-1 text-sm">{card.back}</p>
+                      <p dir="auto" className="font-medium">{card.front}</p>
+                      <p dir="auto" className="mt-1 text-sm">{card.back}</p>
                       <p className="mt-1 text-xs text-slate-500">Source pages: {card.source_pages.join(", ") || "not available"}</p>
                     </div>
                   ))}
@@ -443,7 +443,7 @@ export default function TopicPage() {
                   </Button>
                   <ErrorText>{translate.error ? translate.error.message : ""}</ErrorText>
                   {translatedNotes && (
-                    <div lang="ar" dir="rtl" className="rounded bg-slate-50 p-3 leading-8">
+                    <div lang="ar" dir="rtl" className="rounded bg-slate-50 p-3 text-right leading-8">
                       {translatedNotes}
                     </div>
                   )}
@@ -468,7 +468,7 @@ export default function TopicPage() {
                 )}
                 <Card>
                   <h2 className="mb-3 text-lg font-semibold">{activeLesson.title}</h2>
-                  <div className="prose-lesson max-w-none break-words">
+                  <div dir="auto" className="prose-lesson max-w-none break-words">
                     <ReactMarkdown>
                       {activeLesson.content || item.summary || "_No notes available yet._"}
                     </ReactMarkdown>
@@ -478,7 +478,7 @@ export default function TopicPage() {
             ) : !lesson.isLoading && !lesson.isError ? (
               <Card>
                 <h2 className="font-semibold">Topic notes</h2>
-                <p className="mt-2 text-sm leading-7 text-slate-700">
+                <p dir="auto" className="mt-2 text-sm leading-7 text-slate-700">
                   {item.summary || "No lesson notes are available for this topic yet."}
                 </p>
               </Card>

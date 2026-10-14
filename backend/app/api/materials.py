@@ -18,6 +18,8 @@ from app.schemas import (
 from app.services import ingestion, pipeline
 
 router = APIRouter(prefix="/api/materials", tags=["materials"])
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+MAX_TEXT_CHARACTERS = 100_000
 
 
 @router.post("", response_model=MaterialOut, status_code=201)
@@ -30,7 +32,12 @@ def upload_material(
 ) -> Material:
     if file is not None:
         name = file.filename or "upload"
-        raw = file.file.read()
+        raw = file.file.read(MAX_UPLOAD_BYTES + 1)
+        if len(raw) > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail="File is too large. The maximum upload size is 50 MB.",
+            )
         pages: list[str] = []
         if name.lower().endswith(".pdf"):
             try:
@@ -55,6 +62,11 @@ def upload_material(
             raw_pages=pages,
         )
     elif text:
+        if len(text) > MAX_TEXT_CHARACTERS:
+            raise HTTPException(
+                status_code=413,
+                detail="Text is too long. The maximum length is 100,000 characters.",
+            )
         material = Material(
             student_id=student.id,
             title=title or "Untitled material",

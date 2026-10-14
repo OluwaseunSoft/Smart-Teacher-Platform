@@ -5,6 +5,17 @@ MVP; types chosen to remain Postgres-compatible.
 
 ## Entities
 
+### User
+An authenticated account.
+
+| Field | Type | Notes |
+|---|---|---|
+| id | int PK | |
+| email | str | unique |
+| role | str | `student`, `admin`, `teacher`, or `parent` |
+| language | str | `en` or `ar` |
+| timezone | str | validated IANA time-zone identifier; new accounts default to `Asia/Dubai` |
+
 ### Student
 Auto-created single MVP user.
 
@@ -28,6 +39,7 @@ An uploaded source of study content.
 | raw_pages | JSON | extracted PDF text by page, used for page-level citations |
 | corrections_locked | bool | preserves student corrections during later processing |
 | archived | bool | excludes material from the active curriculum |
+| folder_id | FK → LibraryFolder? | nullable folder placement in the user's library |
 | status | str | `uploaded` → `processing` → `ready` \| `failed` |
 | error | Text? | failure reason |
 | created_at / updated_at | datetime | |
@@ -43,6 +55,11 @@ A retrievable slice of a material; carries its embedding.
 | content | Text | chunk text |
 | embedding | JSON | list[float], nullable |
 | source_pages | JSON | source PDF page numbers represented by this chunk |
+
+### LibraryFolder
+An account-owned directory in the material library. `parent_id` points to
+another folder owned by the same user; empty folders can be deleted without
+affecting any material.
 
 ### Concept
 A teachable unit discovered by structuring.
@@ -129,6 +146,7 @@ Tracks a student's position in a material.
 
 ```
 Student 1─* Material 1─* Chunk
+User 1─* LibraryFolder (folder hierarchy)
 Student 1─* Material 1─* Concept 1─* Lesson 1─* Question
 Concept 1─* Concept (self, parent_id)
 Student 1─* Attempt *─1 Question

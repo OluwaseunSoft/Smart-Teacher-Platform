@@ -3,8 +3,9 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 from typing import Annotated
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -22,12 +23,34 @@ class MaterialOut(ORMModel):
     status: str
     error: str | None = None
     archived: bool = False
+    folder_id: int | None = None
     created_at: datetime
 
 
 class MaterialTextIn(BaseModel):
     title: str = Field(min_length=1, max_length=300)
-    text: str = Field(min_length=1)
+    text: str = Field(min_length=1, max_length=100_000)
+
+
+class LibraryFolderCreateIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    parent_id: int | None = None
+
+
+class LibraryFolderUpdateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    parent_id: int | None = None
+
+
+class LibraryFolderOut(ORMModel):
+    id: int
+    name: str
+    parent_id: int | None = None
+    created_at: datetime
+
+
+class MaterialFolderIn(BaseModel):
+    folder_id: int | None = None
 
 
 class ChapterCorrection(BaseModel):
@@ -203,6 +226,16 @@ def _validate_email(value: str) -> str:
     return value
 
 
+def _validate_timezone(value: str) -> str:
+    try:
+        ZoneInfo(value)
+    except ZoneInfoNotFoundError as exc:
+        raise ValueError(
+            "Use a valid IANA time zone, such as Asia/Dubai."
+        ) from exc
+    return value
+
+
 Email = Annotated[str, AfterValidator(_validate_email)]
 
 
@@ -212,12 +245,23 @@ class SignupIn(BaseModel):
     display_name: str = Field(min_length=1, max_length=120)
     grade: int | None = Field(default=None, ge=1, le=12)
     language: str = Field(default="en", pattern="^(en|ar)$")
-    timezone: str = Field(default="UTC", max_length=64)
+    timezone: str = Field(default="Asia/Dubai", max_length=64)
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, value: str) -> str:
+        return _validate_timezone(value)
 
 
 class LoginIn(BaseModel):
     email: Email
     password: str = Field(min_length=1)
+    timezone: str | None = Field(default=None, max_length=64)
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, value: str | None) -> str | None:
+        return _validate_timezone(value) if value is not None else None
 
 
 class TokenOut(BaseModel):
@@ -248,6 +292,11 @@ class ProfileUpdateIn(BaseModel):
     grade: int | None = Field(default=None, ge=1, le=12)
     language: str | None = Field(default=None, pattern="^(en|ar)$")
     timezone: str | None = Field(default=None, max_length=64)
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, value: str | None) -> str | None:
+        return _validate_timezone(value) if value is not None else None
 
 
 class PasswordResetRequestIn(BaseModel):

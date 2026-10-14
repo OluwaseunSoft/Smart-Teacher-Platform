@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { useAuth } from "../auth";
 import { Button, Card, ErrorText, Spinner } from "../components/ui";
+import { getDeviceTimeZone } from "../lib/timezone";
 
 export default function LoginPage() {
   const { login, signup } = useAuth();
@@ -30,6 +31,7 @@ export default function LoginPage() {
           displayName || email.split("@")[0],
           Number(grade),
           language,
+          getDeviceTimeZone(),
         );
       } else {
         await login(email, password);

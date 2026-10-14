@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
+import { formatDate, formatTimestamp } from "../lib/dateTime";
 import type { User } from "../types";
 import { Badge, Button, Card, ErrorText, Spinner } from "../components/ui";
 
@@ -59,24 +60,30 @@ export default function AdminPage() {
 
       {tab === "users" && (
         <div role="tabpanel" id="panel-users" aria-labelledby="tab-users">
-          <UsersTab currentUserId={user.id} />
+          <UsersTab currentUserId={user.id} timeZone={user.timezone} />
         </div>
       )}
       {tab === "ai" && (
         <div role="tabpanel" id="panel-ai" aria-labelledby="tab-ai">
-          <AiUsageTab locale={locale} />
+          <AiUsageTab locale={locale} timeZone={user.timezone} />
         </div>
       )}
       {tab === "audit" && (
         <div role="tabpanel" id="panel-audit" aria-labelledby="tab-audit">
-          <AuditTab locale={locale} />
+          <AuditTab locale={locale} timeZone={user.timezone} />
         </div>
       )}
     </div>
   );
 }
 
-function UsersTab({ currentUserId }: { currentUserId: number }) {
+function UsersTab({
+  currentUserId,
+  timeZone,
+}: {
+  currentUserId: number;
+  timeZone: string;
+}) {
   const { t, lang } = useI18n();
   const qc = useQueryClient();
   const [input, setInput] = useState("");
@@ -181,7 +188,7 @@ function UsersTab({ currentUserId }: { currentUserId: number }) {
                       </span>
                     </td>
                     <td className="px-4 py-2 text-slate-500">
-                      {new Date(u.created_at).toLocaleDateString(locale)}
+                      {formatDate(u.created_at, timeZone, locale)}
                     </td>
                     <td className="px-4 py-2">
                       {u.id === currentUserId ? (
@@ -249,7 +256,7 @@ function UsersTab({ currentUserId }: { currentUserId: number }) {
   );
 }
 
-function AiUsageTab({ locale }: { locale: string }) {
+function AiUsageTab({ locale, timeZone }: { locale: string; timeZone: string }) {
   const { t } = useI18n();
 
   const usage = useQuery({
@@ -296,7 +303,7 @@ function AiUsageTab({ locale }: { locale: string }) {
           {usage.data?.map((row) => (
             <tr key={row.id}>
               <td className="whitespace-nowrap px-4 py-2 text-slate-500">
-                {new Date(row.created_at).toLocaleString(locale)}
+                {formatTimestamp(row.created_at, timeZone, locale)}
               </td>
               <td className="px-4 py-2 text-slate-600">{row.provider}</td>
               <td className="px-4 py-2 text-slate-600">{row.model}</td>
@@ -336,7 +343,7 @@ function AiUsageTab({ locale }: { locale: string }) {
   );
 }
 
-function AuditTab({ locale }: { locale: string }) {
+function AuditTab({ locale, timeZone }: { locale: string; timeZone: string }) {
   const { t } = useI18n();
 
   const logs = useQuery({
@@ -363,7 +370,7 @@ function AuditTab({ locale }: { locale: string }) {
           {logs.data?.map((row) => (
             <tr key={row.id}>
               <td className="whitespace-nowrap px-4 py-2 text-slate-500">
-                {new Date(row.created_at).toLocaleString(locale)}
+                {formatTimestamp(row.created_at, timeZone, locale)}
               </td>
               <td className="px-4 py-2 text-slate-600">
                 {row.actor_user_id ?? "—"}

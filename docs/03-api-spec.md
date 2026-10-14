@@ -19,24 +19,47 @@ uploads (`multipart/form-data`). Errors use FastAPI's shape:
 
 ## Materials
 
+Uploads accept PDF, TXT, or Markdown files up to 50 MB. Text uploads are limited
+to 100,000 characters. Oversized files return HTTP 413; text exceeding the limit
+is rejected with a validation response. File uploads default the material title
+to the original filename; clients may submit an edited `title`.
+
 | Method | Path | Description |
 |---|---|---|
 | POST | `/api/materials` | Upload a file (`file`) or text (`text`, `title`). Creates a Material with `status=uploaded`. |
 | GET | `/api/materials` | List materials (newest first). |
 | GET | `/api/materials/{id}` | Get one material. |
 | POST | `/api/materials/{id}/process` | Run the full pipeline (ingest → structure → teach). Sets `status`. |
+| PATCH | `/api/materials/{id}/folder` | Move an owned material into a folder or the library root. Body: `{ "folder_id": 12 }` or `null` for root. |
 | PATCH | `/api/materials/{id}/corrections` | Save student-edited title, subject, chapter, and topic grouping; corrections are protected from later processing. |
 | POST | `/api/materials/{id}/archive` | Archive a material. |
 | GET | `/api/materials/{id}/concepts` | List concepts in curriculum order. |
 | GET | `/api/materials/{id}/lessons` | List lessons (with concept info). |
 | DELETE | `/api/materials/{id}` | Delete a material and all dependents. |
 
-**Upload (file):** `multipart/form-data`, field `file` (PDF or `.txt`).
+**Upload (file):** `multipart/form-data`, field `file` (PDF, `.txt`, or `.md`;
+maximum 50 MB).
 **Upload (text):** `application/json`:
 
 ```json
 { "title": "Biology Chapter 3", "text": "..." }
 ```
+
+## Library folders
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/folders` | List the authenticated user's folders, including `parent_id` for nested directories. |
+| POST | `/api/folders` | Create a folder. Body: `{ "name": "Biology", "parent_id": null }`. |
+| PATCH | `/api/folders/{id}` | Rename or move a folder; moving into itself or a descendant is rejected. |
+| DELETE | `/api/folders/{id}` | Delete an empty folder. Files and child folders must be moved first. |
+
+Folders and materials are scoped to the authenticated account. Deleting a
+material is permanent; deleting folders never deletes contained material.
+
+Signup stores an IANA time-zone identifier (default `Asia/Dubai`). Login updates
+it with the device's detected time zone. Clients should render timestamps in
+that configured zone and preserve date-only values as calendar dates.
 
 Material response:
 
@@ -91,8 +114,14 @@ metadata. This endpoint is scoped to the authenticated student's materials.
 |---|---|---|
 | GET | `/api/lessons/{id}` | Full lesson content. |
 | POST | `/api/lessons/{id}/regenerate` | Regenerate lesson (optionally simpler). Body: `{ "simpler": true }`. |
-| POST | `/api/lessons/{id}/quiz` | Generate (or return existing) quiz for the lesson. |
+| POST | `/api/lessons/{id}/quiz?question_format=single` | Optionally generate single-choice questions. |
+| POST | `/api/lessons/{id}/quiz?question_format=multiple` | Optionally generate multiple-choice questions (select all correct answers). |
 | GET | `/api/lessons/{id}/quiz` | Get the quiz for the lesson. |
+
+Omit `question_format` for the existing mixed-format default. A generated quiz
+with no saved learner attempts may be replaced with the selected format. Once
+answers have been saved, replacing that quiz returns HTTP 409 to preserve the
+attempt history.
 
 Lesson response:
 

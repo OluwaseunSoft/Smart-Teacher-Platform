@@ -95,9 +95,18 @@ Open http://localhost:5173. Vite proxies `/api` to the backend on port 8000.
 
 ### 3. Use it
 
-1. Add a PDF or paste text → **Add material**.
-2. Open it → **Process material** (runs the full pipeline).
-3. Open a lesson, **Take the quiz**.
+1. Open **Upload** to add a PDF, TXT, Markdown file (up to 50 MB), or paste up to
+   100,000 characters of text. The original filename is used as the editable
+   default title.
+2. Browse and organize saved materials in **My Library**, including nested
+   folders. Materials and folders are private to each account.
+3. Open a material → **Process material** (runs the full pipeline).
+4. Study a topic and optionally generate single-choice or multiple-choice quiz
+   questions.
+
+Signup and login detect the device's IANA time zone for consistent date/time
+display. Arabic lesson content uses automatic RTL direction and right-aligned
+paragraphs when appropriate.
 4. **Start study session** and let the adaptive engine guide you.
 
 ### Run with Docker

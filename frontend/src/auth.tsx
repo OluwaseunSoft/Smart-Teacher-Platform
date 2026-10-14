@@ -14,6 +14,7 @@ import {
   setTokens,
 } from "./api/authToken";
 import type { User } from "./types";
+import { getDeviceTimeZone } from "./lib/timezone";
 
 interface AuthState {
   user: User | null;
@@ -25,6 +26,7 @@ interface AuthState {
     displayName: string,
     grade: number,
     language: "en" | "ar",
+    timezone: string,
   ) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -60,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const tokens = await api.login(email, password);
+    const tokens = await api.login(email, password, getDeviceTimeZone());
     setTokens(tokens.access_token, tokens.refresh_token);
     setUser(await api.me());
   }, []);
@@ -72,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       displayName: string,
       grade: number,
       language: "en" | "ar",
+      timezone: string,
     ) => {
       const tokens = await api.signup({
         email,
@@ -79,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         display_name: displayName,
         grade,
         language,
+        timezone,
       });
       setTokens(tokens.access_token, tokens.refresh_token);
       setUser(await api.me());

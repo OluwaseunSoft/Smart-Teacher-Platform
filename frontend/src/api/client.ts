@@ -13,6 +13,7 @@ import type {
   ExamDate,
   Lesson,
   LessonSummary,
+  LibraryFolder,
   Material,
   MasteryEvent,
   NextAction,
@@ -79,16 +80,17 @@ export const api = {
     display_name: string;
     grade: number;
     language: "en" | "ar";
+    timezone: string;
   }) =>
     request<TokenResponse>("/auth/signup", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
 
-  login: (email: string, password: string) =>
+  login: (email: string, password: string, timezone: string) =>
     request<TokenResponse>("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, timezone }),
     }),
 
   requestPasswordReset: (email: string) =>
@@ -113,11 +115,34 @@ export const api = {
     ),
 
   listMaterials: () => request<Material[]>("/materials"),
+  listFolders: () => request<LibraryFolder[]>("/folders"),
+  createFolder: (name: string, parent_id: number | null) =>
+    request<LibraryFolder>("/folders", {
+      method: "POST",
+      body: JSON.stringify({ name, parent_id }),
+    }),
+  updateFolder: (
+    id: number,
+    payload: { name?: string; parent_id?: number | null },
+  ) =>
+    request<LibraryFolder>(`/folders/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  deleteFolder: (id: number) =>
+    request<void>(`/folders/${id}`, { method: "DELETE" }),
+  moveMaterial: (id: number, folder_id: number | null) =>
+    request<Material>(`/materials/${id}/folder`, {
+      method: "PATCH",
+      body: JSON.stringify({ folder_id }),
+    }),
 
   getMaterial: (id: number) => request<Material>(`/materials/${id}`),
 
   createTextMaterial: (title: string, text: string) =>
-    request<Material>("/materials/text", {
+    text.length > 100_000
+      ? Promise.reject(new Error("Text is too long. The maximum length is 100,000 characters."))
+      : request<Material>("/materials/text", {
       method: "POST",
       body: JSON.stringify({ title, text }),
     }),
@@ -127,6 +152,9 @@ export const api = {
     title?: string,
     onProgress?: (percent: number) => void,
   ) => {
+    if (file.size > 50 * 1024 * 1024) {
+      return Promise.reject(new Error("File is too large. The maximum upload size is 50 MB."));
+    }
     const form = new FormData();
     form.append("file", file);
     if (title) form.append("title", title);
@@ -202,8 +230,11 @@ export const api = {
       body: JSON.stringify({ simpler }),
     }),
 
-  createQuiz: (lessonId: number) =>
-    request<Quiz>(`/lessons/${lessonId}/quiz`, { method: "POST" }),
+  createQuiz: (lessonId: number, questionFormat?: "single" | "multiple") =>
+    request<Quiz>(
+      `/lessons/${lessonId}/quiz${questionFormat ? `?question_format=${questionFormat}` : ""}`,
+      { method: "POST" },
+    ),
 
   getQuiz: (lessonId: number) => request<Quiz>(`/lessons/${lessonId}/quiz`),
 

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
@@ -10,6 +11,7 @@ export default function LessonPage() {
   const id = Number(lessonId);
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [questionFormat, setQuestionFormat] = useState<"single" | "multiple">("single");
 
   const lesson = useQuery({
     queryKey: ["lesson", id],
@@ -17,7 +19,7 @@ export default function LessonPage() {
   });
 
   const takeQuiz = useMutation({
-    mutationFn: () => api.createQuiz(id),
+    mutationFn: () => api.createQuiz(id, questionFormat),
     onSuccess: (quiz) => navigate(`/lessons/${id}/quiz`, { state: { quiz } }),
   });
 
@@ -62,15 +64,29 @@ export default function LessonPage() {
       )}
 
       <Card>
-        <div className="prose-lesson max-w-none">
+        <div dir="auto" className="prose-lesson max-w-none">
           <ReactMarkdown>{l.content || "_No content generated._"}</ReactMarkdown>
         </div>
       </Card>
 
       <div className="flex flex-wrap gap-3">
-        <Button onClick={() => takeQuiz.mutate()} disabled={takeQuiz.isPending}>
-          {takeQuiz.isPending ? "Building quiz..." : "Take the quiz"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor="quiz-format" className="text-sm font-medium">
+            Optional quiz format
+          </label>
+          <select
+            id="quiz-format"
+            value={questionFormat}
+            onChange={(event) => setQuestionFormat(event.target.value as "single" | "multiple")}
+            className="min-h-11 rounded-lg border border-slate-300 bg-white px-3 text-sm"
+          >
+            <option value="single">Single-choice questions</option>
+            <option value="multiple">Multiple-choice questions</option>
+          </select>
+          <Button onClick={() => takeQuiz.mutate()} disabled={takeQuiz.isPending}>
+            {takeQuiz.isPending ? "Building quiz..." : "Generate optional quiz"}
+          </Button>
+        </div>
         <Button
           variant="secondary"
           onClick={() => simpler.mutate()}

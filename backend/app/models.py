@@ -37,6 +37,23 @@ class Student(Base):
     materials: Mapped[list["Material"]] = relationship(back_populates="student")
 
 
+class LibraryFolder(Base):
+    __tablename__ = "library_folders"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("library_folders.id"), nullable=True, index=True
+    )
+    name: Mapped[str] = mapped_column(String(120))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    parent: Mapped["LibraryFolder | None"] = relationship(
+        remote_side="LibraryFolder.id", back_populates="children"
+    )
+    children: Mapped[list["LibraryFolder"]] = relationship(back_populates="parent")
+
+
 class Material(Base):
     __tablename__ = "materials"
 
@@ -49,6 +66,9 @@ class Material(Base):
     raw_pages: Mapped[list[str]] = mapped_column(JSON, default=list)
     corrections_locked: Mapped[bool] = mapped_column(Boolean, default=False)
     archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    folder_id: Mapped[int | None] = mapped_column(
+        ForeignKey("library_folders.id"), nullable=True, index=True
+    )
     status: Mapped[str] = mapped_column(String(20), default="uploaded")
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

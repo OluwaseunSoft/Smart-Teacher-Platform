@@ -35,12 +35,43 @@ def test_signup_login_and_me(api_client):
     assert me.status_code == 200
     assert me.json()["email"] == "student@example.com"
     assert me.json()["role"] == "student"
+    assert me.json()["timezone"] == "Asia/Dubai"
 
     login = api_client.post(
         "/api/auth/login",
         json={"email": "student@example.com", "password": PASSWORD},
     )
     assert login.status_code == 200
+
+
+def test_login_updates_user_timezone(api_client):
+    _signup(api_client)
+    login = api_client.post(
+        "/api/auth/login",
+        json={
+            "email": "student@example.com",
+            "password": PASSWORD,
+            "timezone": "Europe/London",
+        },
+    )
+    assert login.status_code == 200
+    profile = api_client.get(
+        "/api/auth/me", headers=_auth(login.json()["access_token"])
+    )
+    assert profile.json()["timezone"] == "Europe/London"
+
+
+def test_signup_rejects_invalid_timezone(api_client):
+    response = api_client.post(
+        "/api/auth/signup",
+        json={
+            "email": "timezone@example.com",
+            "password": PASSWORD,
+            "display_name": "Student",
+            "timezone": "Not/A_Timezone",
+        },
+    )
+    assert response.status_code == 422
 
 
 def test_signup_normalizes_email(api_client):

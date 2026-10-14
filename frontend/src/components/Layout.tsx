@@ -11,6 +11,7 @@ import { Button } from "./ui";
 const NAV = [
   { to: "/", key: "nav.dashboard", icon: "⌂", end: true },
   { to: "/library", key: "nav.library", icon: "▤" },
+  { to: "/upload", key: "nav.upload", icon: "+" },
   { to: "/tutor", key: "nav.tutor", icon: "✦" },
   { to: "/reviews", key: "nav.reviews", icon: "↻" },
   { to: "/planner", key: "nav.planner", icon: "▦" },

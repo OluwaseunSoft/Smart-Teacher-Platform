@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -68,12 +68,17 @@ def get_quiz(
 @router.post("/lessons/{lesson_id}/quiz", response_model=QuizOut)
 def create_quiz(
     lesson_id: int,
+    question_format: str | None = Query(default=None, pattern="^(single|multiple)$"),
     student: Student = Depends(current_student),
     db: Session = Depends(get_db),
 ) -> QuizOut:
     lesson = _get_lesson(db, lesson_id, student)
     try:
-        questions = assessment.generate_quiz(db, lesson)
+        questions = assessment.generate_quiz(
+            db, lesson, question_format=question_format
+        )
+    except assessment.QuizFormatConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except (LLMError, ValueError) as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     return _quiz_out(lesson, questions)

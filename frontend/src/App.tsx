@@ -19,7 +19,7 @@ import LessonPage from "./pages/LessonPage";
 import LoginPage from "./pages/LoginPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import MaterialDetailPage from "./pages/MaterialDetailPage";
-import MaterialsPage from "./pages/MaterialsPage";
+import LibraryPage from "./pages/LibraryPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import PlannerPage from "./pages/PlannerPage";
@@ -31,6 +31,7 @@ import SettingsPage from "./pages/SettingsPage";
 import StudyPage from "./pages/StudyPage";
 import TopicPage from "./pages/TopicPage";
 import TutorPage from "./pages/TutorPage";
+import UploadPage from "./pages/UploadPage";
 
 function RequireAdmin({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -102,7 +103,8 @@ export default function App() {
         }
       >
         <Route path="/" element={<DashboardPage />} />
-        <Route path="/library" element={<MaterialsPage />} />
+        <Route path="/library" element={<LibraryPage />} />
+        <Route path="/upload" element={<UploadPage />} />
         <Route path="/materials/:materialId" element={<MaterialDetailPage />} />
         <Route path="/lessons/:lessonId" element={<LessonPage />} />
         <Route path="/lessons/:lessonId/quiz" element={<QuizPage />} />

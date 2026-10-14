@@ -196,7 +196,7 @@ export default function TutorPage() {
                       }`}
                     >
                       {m.role === "assistant" ? (
-                        <div className="prose-lesson text-sm">
+                        <div dir="auto" className="prose-lesson text-sm">
                           <ReactMarkdown>{m.content}</ReactMarkdown>
                         </div>
                       ) : (

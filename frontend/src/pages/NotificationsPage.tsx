@@ -2,10 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "../api/client";
 import { useI18n } from "../i18n";
+import { useAuth } from "../auth";
+import { formatTimestamp } from "../lib/dateTime";
 import { Button, Card, ErrorText, Spinner } from "../components/ui";
 
 export default function NotificationsPage() {
   const { t, lang } = useI18n();
+  const { user } = useAuth();
   const qc = useQueryClient();
 
   const notifications = useQuery({
@@ -70,7 +73,7 @@ export default function NotificationsPage() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="font-medium text-slate-800">{n.title}</p>
               <span className="text-xs text-slate-400">
-                {new Date(n.created_at).toLocaleString(locale)}
+                {formatTimestamp(n.created_at, user?.timezone ?? "Asia/Dubai", locale)}
               </span>
             </div>
             <p className="text-sm text-slate-600">{n.body}</p>

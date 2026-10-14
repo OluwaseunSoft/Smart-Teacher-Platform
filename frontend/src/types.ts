@@ -8,6 +8,14 @@ export interface Material {
   status: MaterialStatus;
   error: string | null;
   archived: boolean;
+  folder_id: number | null;
+  created_at: string;
+}
+
+export interface LibraryFolder {
+  id: number;
+  name: string;
+  parent_id: number | null;
   created_at: string;
 }
 
@@ -40,7 +48,7 @@ export interface LessonSummary {
 
 export interface QuizQuestion {
   id: number;
-  type: "mcq" | "short";
+  type: "mcq" | "multi" | "short";
   prompt: string;
   options: string[] | null;
   difficulty: number;

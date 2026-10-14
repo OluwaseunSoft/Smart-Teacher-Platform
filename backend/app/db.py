@@ -30,7 +30,7 @@ def init_db() -> None:
 
 def _upgrade_existing_columns() -> None:
     additions = {
-        "materials": ("raw_pages", "corrections_locked", "archived"),
+        "materials": ("raw_pages", "corrections_locked", "archived", "folder_id"),
         "chunks": ("source_pages",),
         "academic_years": ("user_id",),
         "subjects": ("archived", "academic_year_id"),

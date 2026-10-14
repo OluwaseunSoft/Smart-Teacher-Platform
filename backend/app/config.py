@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./suhail.db"
     CORS_ORIGINS: str = "http://localhost:5173"
     RETRIEVAL_TOP_K: int = 5
-    MAX_UPLOAD_MB: int = 20
+    MAX_UPLOAD_MB: int = 50
     SEED_DEMO_DATA: bool = True
 
     # Auth

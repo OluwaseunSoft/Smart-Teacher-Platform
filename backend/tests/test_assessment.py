@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import pytest
+from sqlalchemy import select
 
-from app.models import Concept, Lesson, Material, Question, Student
+from app.models import Attempt, Concept, Lesson, Material, Question, Student
 from app.services import assessment
+from app.services.assessment import QuizFormatConflict
 
 
 class FakeProvider:
@@ -53,6 +55,21 @@ def test_mcq_grading_accepts_option_letter():
 def test_mcq_grading_rejects_wrong_answer():
     correct, _ = assessment.grade_answer(_question(), "Membrane")
     assert correct is False
+
+
+def test_multiple_choice_grading_requires_exact_selected_set():
+    question = _question(
+        type="multi",
+        options=["Mitochondria", "Nucleus", "Membrane"],
+        answer='["Mitochondria", "Nucleus"]',
+    )
+    assert assessment.grade_answer(
+        question, '["Nucleus", "Mitochondria"]'
+    )[0] is True
+    assert assessment.grade_answer(question, '["Nucleus"]')[0] is False
+    assert assessment.grade_answer(
+        question, '["Nucleus", "Mitochondria", "Membrane"]'
+    )[0] is False
 
 
 def test_grading_empty_response_is_incorrect():
@@ -156,3 +173,53 @@ def test_generate_quiz_normalizes_types_and_skips_invalid(db_session, monkeypatc
     assert questions[2].options is None
     assert questions[0].difficulty == 4
     assert len(provider.calls) == 1
+
+
+def test_generate_quiz_supports_multiple_correct_options(db_session, monkeypatch):
+    lesson = _lesson(db_session)
+    monkeypatch.setattr(assessment, "retrieve", lambda *a, **k: [])
+    provider = FakeProvider(
+        {
+            "questions": [
+                {
+                    "type": "multi",
+                    "prompt": "Select all cell structures.",
+                    "options": ["Nucleus", "Mitochondria", "Stone"],
+                    "answer": ["Nucleus", "Mitochondria"],
+                    "explanation": "Both are cell structures.",
+                }
+            ]
+        }
+    )
+    monkeypatch.setattr(assessment, "get_llm", lambda: provider)
+
+    questions = assessment.generate_quiz(
+        db_session, lesson, question_format="multiple"
+    )
+
+    assert len(questions) == 1
+    assert questions[0].type == "multi"
+    assert questions[0].answer == '["Nucleus", "Mitochondria"]'
+    assert "only \"multi\"" in provider.calls[0][0][0]["content"]
+
+
+def test_quiz_format_cannot_replace_saved_attempts(db_session, monkeypatch):
+    lesson = _lesson(db_session)
+    question = _question(lesson_id=lesson.id, concept_id=lesson.concept_id)
+    db_session.add(question)
+    db_session.commit()
+    db_session.add(
+        Attempt(
+            student_id=db_session.scalar(select(Student.id)),
+            question_id=question.id,
+            response="Nucleus",
+            is_correct=True,
+        )
+    )
+    db_session.commit()
+    monkeypatch.setattr(assessment, "get_llm", lambda: FakeProvider())
+
+    with pytest.raises(QuizFormatConflict):
+        assessment.generate_quiz(
+            db_session, lesson, question_format="multiple"
+        )

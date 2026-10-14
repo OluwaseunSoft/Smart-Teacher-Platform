@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../auth";
 import { useI18n, type Language } from "../i18n";
+import { getDeviceTimeZone } from "../lib/timezone";
 import { markOnboarded } from "../lib/onboarding";
 import { Button, Card, ErrorText, Spinner } from "../components/ui";
 
@@ -20,7 +21,7 @@ export default function OnboardingPage() {
     (user?.language as Language) ?? "en",
   );
   const [timezone, setTimezone] = useState(
-    user?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    user?.timezone || getDeviceTimeZone(),
   );
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);

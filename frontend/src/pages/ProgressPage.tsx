@@ -2,10 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api } from "../api/client";
 import { useI18n } from "../i18n";
+import { useAuth } from "../auth";
+import { formatDate } from "../lib/dateTime";
 import { Card, ErrorText, Spinner } from "../components/ui";
 
 export default function ProgressPage() {
   const { t, lang } = useI18n();
+  const { user } = useAuth();
 
   const mastery = useQuery({
     queryKey: ["mastery"],
@@ -84,7 +87,11 @@ export default function ProgressPage() {
               <p className="text-xs text-slate-400">
                 {a.unlocked && a.unlocked_at
                   ? t("progress.unlocked", {
-                      date: new Date(a.unlocked_at).toLocaleDateString(locale),
+                      date: formatDate(
+                        a.unlocked_at,
+                        user?.timezone ?? "Asia/Dubai",
+                        locale,
+                      ),
                     })
                   : t("progress.locked")}
               </p>
