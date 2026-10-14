@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { api } from "../api/client";
 import { Button, Card, ErrorText, Spinner } from "../components/ui";
+import { parseTimestamp } from "../lib/dateTime";
 
 export default function PracticeExamPage() {
   const { examId } = useParams();
@@ -48,7 +49,7 @@ export default function PracticeExamPage() {
   }, [answers, exam.data?.id, exam.data?.submitted_at]);
 
   const endAt = exam.data
-    ? new Date(exam.data.started_at).getTime() + exam.data.duration_seconds * 1000
+    ? parseTimestamp(exam.data.started_at).getTime() + exam.data.duration_seconds * 1000
     : 0;
   const remaining = Math.max(0, Math.ceil((endAt - now) / 1000));
   useEffect(() => {

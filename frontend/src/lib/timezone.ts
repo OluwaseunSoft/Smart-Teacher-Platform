@@ -1,6 +1,7 @@
 export function getDeviceTimeZone(): string {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Dubai";
+    const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return detected && detected !== "Etc/Unknown" ? detected : "Asia/Dubai";
   } catch {
     return "Asia/Dubai";
   }

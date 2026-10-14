@@ -2,11 +2,15 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "../api/client";
+import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { Button, Card, ErrorText, Spinner } from "../components/ui";
+import { formatDate } from "../lib/dateTime";
 
 export default function PlannerPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const { user } = useAuth();
+  const locale = lang === "ar" ? "ar" : "en";
   const qc = useQueryClient();
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
   const [title, setTitle] = useState("");
@@ -222,7 +226,9 @@ export default function PlannerPage() {
             >
               <div>
                 <p className="font-medium text-slate-800">{exam.title}</p>
-                <p className="text-xs text-slate-500">{exam.exam_date}</p>
+                <p className="text-xs text-slate-500">
+                  {formatDate(exam.exam_date, user?.timezone ?? "Asia/Dubai", locale)}
+                </p>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -317,7 +323,11 @@ export default function PlannerPage() {
                     {t("planner.minutes", { n: item.estimated_minutes })}
                     {item.scheduled_for
                       ? ` · ${t("planner.scheduled", {
-                          date: item.scheduled_for,
+                          date: formatDate(
+                            item.scheduled_for,
+                            user?.timezone ?? "Asia/Dubai",
+                            locale,
+                          ),
                         })}`
                       : ""}
                   </p>

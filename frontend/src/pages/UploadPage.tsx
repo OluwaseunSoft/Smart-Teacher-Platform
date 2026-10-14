@@ -122,7 +122,7 @@ export default function UploadPage() {
                 setError("");
               }}
               rows={10}
-              maxLength={MAX_TEXT_CHARACTERS}
+              maxLength={MAX_TEXT_CHARACTERS + 1}
               aria-describedby="text-count"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               placeholder={t("upload.placeholder")}
@@ -133,6 +133,11 @@ export default function UploadPage() {
                 maximum: MAX_TEXT_CHARACTERS.toLocaleString(),
               })}
             </p>
+            {text.length > MAX_TEXT_CHARACTERS && (
+              <p role="alert" className="text-sm text-red-700">
+                {t("upload.textLimit")}
+              </p>
+            )}
           </div>
         )}
 
@@ -170,7 +175,10 @@ export default function UploadPage() {
             setError("");
             create.mutate();
           }}
-          disabled={create.isPending}
+          disabled={
+            create.isPending ||
+            (method === "text" && text.length > MAX_TEXT_CHARACTERS)
+          }
         >
           {create.isPending ? t("upload.adding") : t("upload.add")}
         </Button>

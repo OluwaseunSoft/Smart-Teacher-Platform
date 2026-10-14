@@ -5,6 +5,7 @@ import { api } from "../api/client";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { Card, ErrorText, Spinner } from "../components/ui";
+import { formatDate } from "../lib/dateTime";
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -20,7 +21,8 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const locale = lang === "ar" ? "ar" : "en";
 
   const dashboard = useQuery({
     queryKey: ["dashboard"],
@@ -115,7 +117,9 @@ export default function DashboardPage() {
           ) : d.upcoming_exams.map((exam) => (
             <div key={exam.id} className="flex justify-between gap-3 border-b pb-2 text-sm">
               <span>{exam.title}</span>
-              <time dateTime={exam.exam_date}>{exam.exam_date}</time>
+              <time dateTime={exam.exam_date}>
+                {formatDate(exam.exam_date, user?.timezone ?? "Asia/Dubai", locale)}
+              </time>
             </div>
           ))}
         </Card>
