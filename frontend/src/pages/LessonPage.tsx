@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import ReactMarkdown from "react-markdown";
-
 import { api } from "../api/client";
+import MarkdownContent from "../components/MarkdownContent";
 import { Button, Card, ErrorText, Spinner } from "../components/ui";
 
 export default function LessonPage() {
@@ -65,7 +64,7 @@ export default function LessonPage() {
 
       <Card>
         <div dir="auto" className="prose-lesson max-w-none">
-          <ReactMarkdown>{l.content || "_No content generated._"}</ReactMarkdown>
+          <MarkdownContent>{l.content || "_No content generated._"}</MarkdownContent>
         </div>
       </Card>
 

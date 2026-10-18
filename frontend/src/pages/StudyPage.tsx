@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import ReactMarkdown from "react-markdown";
-
 import { api } from "../api/client";
+import MarkdownContent from "../components/MarkdownContent";
 import QuizRunner from "../components/QuizRunner";
 import { Badge, Button, Card, ErrorText, Spinner } from "../components/ui";
 import type { NextAction, Quiz } from "../types";
@@ -108,7 +107,7 @@ export default function StudyPage() {
                   </ul>
                 )}
                 <div dir="auto" className="prose-lesson mt-4 max-w-none">
-                  <ReactMarkdown>{action.lesson.content}</ReactMarkdown>
+                  <MarkdownContent>{action.lesson.content}</MarkdownContent>
                 </div>
               </Card>
               <div className="flex flex-wrap gap-3">

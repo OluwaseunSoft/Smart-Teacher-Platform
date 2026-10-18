@@ -72,7 +72,7 @@ select {
 .prose-lesson h1 { font-size: 1.6rem; }
 .prose-lesson h2 { font-size: 1.3rem; }
 .prose-lesson h3 { font-size: 1.1rem; }
-.prose-lesson p { margin: 0.7em 0; line-height: 1.7; }
+.prose-lesson p { margin: 0.7em 0; line-height: 1.7; text-align: start; }
 .prose-lesson ul { list-style: disc; padding-inline-start: 1.4em; margin: 0.7em 0; }
 .prose-lesson ol { list-style: decimal; padding-inline-start: 1.4em; margin: 0.7em 0; }
 .prose-lesson li { margin: 0.25em 0; line-height: 1.6; }

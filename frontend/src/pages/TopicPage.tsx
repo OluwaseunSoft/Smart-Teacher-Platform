@@ -1,10 +1,10 @@
 import { useState, type FormEvent, type KeyboardEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import ReactMarkdown from "react-markdown";
 
 import { api } from "../api/client";
 import { Button, Card, ErrorText, Spinner } from "../components/ui";
+import MarkdownContent from "../components/MarkdownContent";
 import type { Lesson } from "../types";
 
 const TABS = [
@@ -94,7 +94,7 @@ function TopicTutor({ topicId }: { topicId: number }) {
               {message.role === "assistant" ? (
                 <>
                   <div dir="auto" className="prose-lesson">
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                    <MarkdownContent>{message.content}</MarkdownContent>
                   </div>
                   {message.grounding.length > 0 && (
                     <p className="mt-2 border-t border-slate-300 pt-2 text-xs text-slate-500">
@@ -469,9 +469,9 @@ export default function TopicPage() {
                 <Card>
                   <h2 className="mb-3 text-lg font-semibold">{activeLesson.title}</h2>
                   <div dir="auto" className="prose-lesson max-w-none break-words">
-                    <ReactMarkdown>
+                    <MarkdownContent>
                       {activeLesson.content || item.summary || "_No notes available yet._"}
-                    </ReactMarkdown>
+                    </MarkdownContent>
                   </div>
                 </Card>
               </>

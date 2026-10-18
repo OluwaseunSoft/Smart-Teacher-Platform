@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import ReactMarkdown from "react-markdown";
-
 import { api } from "../api/client";
+import MarkdownContent from "../components/MarkdownContent";
 import { useI18n } from "../i18n";
 import { Button, Card, ErrorText, Spinner } from "../components/ui";
 
@@ -197,7 +196,7 @@ export default function TutorPage() {
                     >
                       {m.role === "assistant" ? (
                         <div dir="auto" className="prose-lesson text-sm">
-                          <ReactMarkdown>{m.content}</ReactMarkdown>
+                          <MarkdownContent>{m.content}</MarkdownContent>
                         </div>
                       ) : (
                         <p className="whitespace-pre-wrap">{m.content}</p>

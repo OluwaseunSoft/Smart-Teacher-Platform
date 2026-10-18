@@ -51,14 +51,14 @@ def test_login_updates_user_timezone(api_client):
         json={
             "email": "student@example.com",
             "password": PASSWORD,
-            "timezone": "Europe/London",
+            "timezone": "Africa/Lagos",
         },
     )
     assert login.status_code == 200
     profile = api_client.get(
         "/api/auth/me", headers=_auth(login.json()["access_token"])
     )
-    assert profile.json()["timezone"] == "Europe/London"
+    assert profile.json()["timezone"] == "Africa/Lagos"
 
 
 def test_signup_rejects_invalid_timezone(api_client):
