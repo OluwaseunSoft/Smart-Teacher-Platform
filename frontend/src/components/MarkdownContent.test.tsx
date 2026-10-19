@@ -17,4 +17,15 @@ describe("MarkdownContent", () => {
     expect(paragraphs[0]).toHaveAttribute("dir", "auto");
     expect(paragraphs[1]).toHaveAttribute("dir", "auto");
   });
+
+  it("gives headings and list items independent direction while keeping code LTR", () => {
+    const { container } = render(
+      <MarkdownContent>{"## ملخّص الدرس\n\n- نقطة عربية\n- English point\n\n> اقتباس عربي\n\n```python\nprint('hello')\n```"}</MarkdownContent>,
+    );
+    for (const block of container.querySelectorAll("h2, ul, li, blockquote, p")) {
+      expect(block).toHaveAttribute("dir", "auto");
+    }
+    expect(container.querySelectorAll("li")).toHaveLength(2);
+    expect(container.querySelector("pre")).toHaveAttribute("dir", "ltr");
+  });
 });

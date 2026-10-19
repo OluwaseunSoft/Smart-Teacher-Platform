@@ -152,7 +152,7 @@ export default function MaterialDetailPage() {
           <Link to="/library" className="text-sm text-indigo-600 hover:underline">
             ← Library
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">{m.title}</h1>
+          <h1 dir="auto" className="mt-1 text-2xl font-semibold">{m.title}</h1>
         </div>
         <Badge value={m.status} />
       </div>
@@ -280,10 +280,10 @@ export default function MaterialDetailPage() {
                         <span className="text-sm text-slate-400">
                           {c.order_index + 1}.
                         </span>
-                        <h3 className="font-medium">{c.title}</h3>
+                        <h3 dir="auto" className="font-medium">{c.title}</h3>
                         <Badge value={c.difficulty} />
                       </div>
-                      <p className="mt-1 text-sm text-slate-600 line-clamp-2">
+                      <p dir="auto" className="mt-1 text-sm text-slate-600 line-clamp-2">
                         {c.summary}
                       </p>
                     </div>

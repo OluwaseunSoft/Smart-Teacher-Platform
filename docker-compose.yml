@@ -5,6 +5,9 @@ services:
     environment:
       DATABASE_URL: sqlite:////data/suhail.db
       OLLAMA_BASE_URL: http://ollama:11434
+      # Use the image's OCR installation, even if .env has Windows-local paths.
+      OCR_TESSERACT_CMD: tesseract
+      OCR_TESSDATA_DIR: ""
     env_file:
       - path: ./backend/.env
         required: false

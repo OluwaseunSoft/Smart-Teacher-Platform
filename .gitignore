@@ -64,4 +64,5 @@ __pycache__/
 frontend/dist/
 frontend/dev-dist/
 *.tsbuildinfo
+.ocr-data/
 *.docx

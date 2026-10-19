@@ -174,6 +174,43 @@ npm run build
 
 ## Configuration reference
 
+### Scanned PDFs (Arabic and English OCR)
+
+PDFs with embedded text use the existing text extractor. Image-only pages use
+local Tesseract OCR, preserving original page numbers for source references.
+OCR happens during upload and can take several minutes for a scanned book;
+keep the upload page open until it finishes. Uploading a chapter at a time is
+faster. Recognition quality depends on the scan; check extracted notes for errors.
+No PDF pages are sent to an AI provider for OCR.
+
+Docker installs Tesseract with Arabic and English language data automatically;
+rebuild the images after updating with `docker compose build backend frontend`,
+then apply them with `docker compose up -d`. The backend build verifies both OCR
+languages, PDFium, and IANA time-zone data as its non-root runtime user. Compose
+uses the container's Tesseract installation instead of Windows-local OCR paths
+in `.env`. The frontend image includes the updated interface and an Nginx proxy
+that accepts uploads up to the API's 50 MB limit (with multipart overhead) and
+allows up to 1,900 seconds for a scanned-PDF response. If you increase
+`OCR_DOCUMENT_TIMEOUT_SECONDS` above that, increase the proxy timeout too.
+
+For Windows development:
+
+```powershell
+winget install --id UB-Mannheim.TesseractOCR --exact
+cd backend
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+New-Item -ItemType Directory -Force .ocr-data
+Invoke-WebRequest https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/ara.traineddata -OutFile .ocr-data/ara.traineddata
+Invoke-WebRequest https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/eng.traineddata -OutFile .ocr-data/eng.traineddata
+```
+
+Set `OCR_TESSDATA_DIR=./.ocr-data` in `backend/.env` and restart the backend.
+The engine is found on PATH or at `C:\Program Files\Tesseract-OCR\tesseract.exe`;
+set `OCR_TESSERACT_CMD` for another installation location. Language files come
+from the [official Tesseract fast models](https://github.com/tesseract-ocr/tessdata_fast).
+See [Tesseract installation guidance](https://tesseract-ocr.github.io/tessdoc/Installation.html)
+for other operating systems.
+
 | Variable | Purpose | Default |
 |---|---|---|
 | `LLM_PROVIDER` | generation backend | `ollama` |
@@ -184,6 +221,11 @@ npm run build
 | `DATABASE_URL` | database | `sqlite:///./suhail.db` |
 | `CORS_ORIGINS` | allowed origins | `http://localhost:5173` |
 | `RETRIEVAL_TOP_K` | grounding chunks per query | `5` |
+| `OCR_TESSERACT_CMD` | optional Tesseract executable path | automatic discovery |
+| `OCR_LANGUAGES` | Tesseract language codes | `ara+eng` |
+| `OCR_TESSDATA_DIR` | optional directory of OCR language models | engine default |
+| `OCR_PAGE_TIMEOUT_SECONDS` | maximum recognition time per scanned page | `60` |
+| `OCR_DOCUMENT_TIMEOUT_SECONDS` | total scanned-document recognition budget | `1800` |
 
 ## Status
 

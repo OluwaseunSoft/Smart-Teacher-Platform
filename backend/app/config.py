@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,6 +26,11 @@ class Settings(BaseSettings):
     RETRIEVAL_TOP_K: int = 5
     MAX_UPLOAD_MB: int = 50
     SEED_DEMO_DATA: bool = True
+    OCR_TESSERACT_CMD: str = ""
+    OCR_LANGUAGES: str = "ara+eng"
+    OCR_TESSDATA_DIR: str = ""
+    OCR_PAGE_TIMEOUT_SECONDS: int = Field(default=60, ge=1)
+    OCR_DOCUMENT_TIMEOUT_SECONDS: int = Field(default=1800, ge=1)
 
     # Auth
     AUTH_SECRET_KEY: str = "dev-insecure-change-me-please-set-a-real-secret"

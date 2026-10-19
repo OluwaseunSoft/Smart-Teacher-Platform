@@ -26,7 +26,22 @@ def extract_pdf_pages(data: bytes) -> list[str]:
         raise ValueError("pypdf is required to read PDFs.") from exc
 
     reader = PdfReader(io.BytesIO(data))
-    return [page.extract_text() or "" for page in reader.pages]
+    pages = [page.extract_text() or "" for page in reader.pages]
+    scanned = [
+        index for index, page in enumerate(reader.pages)
+        if not pages[index].strip() and len(page.images) > 0
+    ]
+    if scanned:
+        from app.services.ocr import recognize_pages
+
+        for index, text in recognize_pages(data, scanned).items():
+            pages[index] = text
+        if not any(text.strip() for text in pages):
+            raise ValueError(
+                "OCR could not read text from this scanned PDF. "
+                "Try a clearer scan or upload a smaller chapter."
+            )
+    return pages
 
 
 def normalize(text: str) -> str:

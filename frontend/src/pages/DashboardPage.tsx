@@ -1,284 +1,102 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-
 import { api } from "../api/client";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
 import { Card, ErrorText, Spinner } from "../components/ui";
+import { Icon, type IconName } from "../components/Icon";
 import { formatDate } from "../lib/dateTime";
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <Card className="group relative overflow-hidden border-slate-200/80 p-5 transition hover:-translate-y-0.5 hover:shadow-md">
-      <span aria-hidden="true" className="absolute -end-3 -top-5 h-20 w-20 rounded-full bg-indigo-50 transition group-hover:scale-110" />
-      <div className="relative">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-        <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
-      </div>
-    </Card>
-  );
+function Stat({ label, value, note, icon, tone }: { label: string; value: string; note: string; icon: IconName; tone: string }) {
+  return <Card className={`dashboard-stat ${tone}`}>
+    <span className="icon-tile"><Icon name={icon} size={22}/></span>
+    <p className="stat-value" dir="ltr">{value}</p><h2>{label}</h2><p className="stat-note">{note}</p>
+  </Card>;
 }
+
+const percentage = (value: number) => Math.min(100, Math.max(0, Math.round(value * 100)));
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { t, lang } = useI18n();
   const locale = lang === "ar" ? "ar" : "en";
-
-  const dashboard = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: api.getDashboard,
-  });
-  const today = useQuery({
-    queryKey: ["study-today"],
-    queryFn: api.getStudyToday,
-  });
-
-  if (dashboard.isLoading) return <Spinner label={t("common.loading")} />;
-  if (dashboard.isError)
-    return <ErrorText>{(dashboard.error as Error).message}</ErrorText>;
-
+  const dashboard = useQuery({ queryKey: ["dashboard"], queryFn: api.getDashboard });
+  const today = useQuery({ queryKey: ["study-today"], queryFn: api.getStudyToday });
+  if (dashboard.isLoading) return <Spinner label={t("common.loading")}/>;
+  if (dashboard.isError) return <ErrorText>{(dashboard.error as Error).message}</ErrorText>;
   const d = dashboard.data!;
   const plan = d.active_plan;
+  const next = today.data?.items[0];
+  const subjects = d.subject_progress ?? [];
+  const trend = (d.score_trend ?? []).slice(-7);
+  const exams = d.upcoming_exams ?? [];
+  const nextPath = next ? `/topics/${next.topic_id}` : d.topics_total ? "/library" : "/upload";
+  const actions: { to: string; title: string; description: string; icon: IconName; tone: string }[] = [
+    { to: "/upload", title: "nav.upload", description: "dash.addMaterial", icon: "upload", tone: "tone-blue" },
+    { to: "/library", title: "nav.library", description: "dash.openLessons", icon: "book", tone: "tone-teal" },
+    { to: "/tutor", title: "dashboard.askTutor", description: "dash.workItOut", icon: "sparkles", tone: "tone-violet" },
+    { to: "/planner", title: "nav.planner", description: "dash.makeTime", icon: "calendar", tone: "tone-amber" },
+  ];
 
-  return (
-    <div className="space-y-7">
-      <section className="relative isolate overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-700 via-indigo-600 to-violet-600 px-6 py-7 text-white shadow-xl shadow-indigo-200/70 sm:px-8 sm:py-9">
-        <div aria-hidden="true" className="absolute -end-8 -top-20 -z-10 h-64 w-64 rounded-full border-[35px] border-white/10" />
-        <div aria-hidden="true" className="absolute -bottom-32 end-1/3 -z-10 h-64 w-64 rounded-full bg-violet-400/20 blur-3xl" />
-        <div className="max-w-2xl">
-          <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-indigo-200">
-            {t("dashboard.title")}
-          </p>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            {t("dashboard.welcome", { name: user?.display_name ?? "" })}
-          </h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-indigo-100 sm:text-base">
-            {t("dashboard.subtitle")}
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              to="/library"
-              className="inline-flex min-h-11 items-center rounded-xl bg-white px-4 text-sm font-bold text-indigo-700 shadow-sm transition hover:bg-indigo-50"
-            >
-              {t("dashboard.explore")} <span aria-hidden="true" className="ms-2">→</span>
-            </Link>
-            <Link
-              to="/reviews"
-              className="inline-flex min-h-11 items-center rounded-xl border border-white/30 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              {t("dashboard.startReview")}
-            </Link>
-          </div>
-        </div>
-      </section>
+  return <div className="dashboard-page">
+    <section className="dashboard-heading">
+      <div><p className="eyebrow">{t("dash.smallSteps")}</p><h1>{t("dashboard.welcome", { name: user?.display_name ?? "" })}<span className="welcome-spark" aria-hidden="true"><Icon name="sparkles" size={25}/></span></h1><p>{t("dash.welcomeSubtitle")}</p></div>
+      <span className="study-time-pill"><Icon name="clock" size={17}/>{t("dash.studyTime", { n: d.study_minutes ?? 0 })}</span>
+    </section>
 
-      <section aria-label={t("dashboard.title")} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat
-          label={t("dashboard.streak")}
-          value={`${d.streak.current} · ${t("dashboard.longest", {
-            n: d.streak.longest,
-          })}`}
-        />
-        <Stat
-          label={t("dashboard.topics")}
-          value={`${d.topics_covered} / ${d.topics_total}`}
-        />
-        <Stat
-          label={t("dashboard.mastery")}
-          value={`${Math.round(d.average_mastery * 100)}%`}
-        />
-        <Stat label={t("dashboard.due")} value={String(d.due_reviews)} />
-        <Stat label="Study time" value={`${d.study_minutes} min`} />
-      </section>
+    <section className="focus-banner">
+      <div className="focus-copy"><span className="focus-label"><span className="live-dot"/>{t("dash.nextStep")}</span>
+        <h2>{t("dash.nextWin")}</h2>
+        <p>{next ? t("dash.reviewReady", { n: today.data?.items.length ?? 0 }) : d.topics_total ? t("dash.pickTopic") : t("dash.firstUpload")}</p>
+        <Link to={nextPath} className="study-button primary">{t(next ? "dash.letsStudy" : d.topics_total ? "dashboard.explore" : "upload.title")}<Icon name="arrow" size={18}/></Link>
+      </div>
+      <div className="focus-art" aria-hidden="true"><div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><span className="art-spark spark-one">✦</span><span className="art-spark spark-two">✧</span><div className="art-book"><Icon name="book" size={66}/></div><span className="art-check"><Icon name="check" size={20}/></span><span className="art-small-star"><Icon name="sparkles" size={24}/></span></div>
+    </section>
 
-      <section className="grid gap-5 lg:grid-cols-2">
-        <Card className="space-y-3">
-          <h2 className="text-lg font-semibold">Study today</h2>
-          {today.isLoading && <Spinner />}
+    <section aria-label={t("dashboard.title")} className="dashboard-stats">
+      <Stat label={t("dashboard.streak")} value={String(d.streak.current)} note={t("dashboard.longest", { n: d.streak.longest })} icon="flame" tone="tone-amber"/>
+      <Stat label={t("dashboard.topics")} value={`${d.topics_covered} / ${d.topics_total}`} note={t("dash.oneStep")} icon="book" tone="tone-blue"/>
+      <Stat label={t("dashboard.mastery")} value={`${percentage(d.average_mastery)}%`} note={t("dash.growingSkills")} icon="target" tone="tone-teal"/>
+      <Stat label={t("dashboard.achievements")} value={`${d.achievements_unlocked} / ${d.achievements_total}`} note={t("dash.celebrate")} icon="trophy" tone="tone-violet"/>
+    </section>
+
+    <div className="dashboard-columns">
+      <div className="dashboard-primary">
+        <Card className="today-card">
+          <div className="section-heading"><h2><span className="heading-icon tone-blue"><Icon name="review"/></span>{t("dash.studyToday")}</h2><span className="count-pill">{t("dash.dueCount", { n: d.due_reviews })}</span></div>
+          <p className="section-description">{t("dash.todayHint")}</p>
+          {today.isLoading && <Spinner label={t("common.loading")}/>}
           {today.isError && <ErrorText>{(today.error as Error).message}</ErrorText>}
-          {!today.isLoading && today.data?.items.length === 0 && (
-            <p className="text-sm text-slate-500">No due reviews or missed topics today.</p>
-          )}
-          {today.data?.items.map((item) => (
-            <Link
-              key={item.topic_id}
-              to={`/topics/${item.topic_id}`}
-              className="flex items-center justify-between gap-3 rounded-lg border p-3 hover:border-indigo-300"
-            >
-              <span className="font-medium">{item.title}</span>
-              <span className="text-xs text-slate-500">{item.reason}</span>
-            </Link>
-          ))}
-        </Card>
-        <Card className="space-y-3">
-          <h2 className="text-lg font-semibold">Upcoming exams</h2>
-          {d.upcoming_exams.length === 0 ? (
-            <p className="text-sm text-slate-500">No upcoming exams scheduled.</p>
-          ) : d.upcoming_exams.map((exam) => (
-            <div key={exam.id} className="flex justify-between gap-3 border-b pb-2 text-sm">
-              <span>{exam.title}</span>
-              <time dateTime={exam.exam_date}>
-                {formatDate(exam.exam_date, user?.timezone ?? "Asia/Dubai", locale)}
-              </time>
-            </div>
-          ))}
-        </Card>
-        <Card className="space-y-3">
-          <h2 className="text-lg font-semibold">Subject progress</h2>
-          {d.subject_progress.map((subject) => (
-            <div key={subject.subject} className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span>{subject.subject}</span>
-                <span>{subject.covered}/{subject.total} topics · {Math.round(subject.mastery * 100)}%</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded bg-slate-100">
-                <div className="h-full bg-indigo-600" style={{ width: `${Math.round(subject.mastery * 100)}%` }} />
-              </div>
-            </div>
-          ))}
-        </Card>
-        <Card className="space-y-3">
-          <h2 className="text-lg font-semibold">Quiz score trend</h2>
-          {d.score_trend.length === 0 ? (
-            <p className="text-sm text-slate-500">Complete quizzes to see your score trend.</p>
-          ) : d.score_trend.map((point) => (
-            <div key={point.date} className="flex justify-between border-b pb-2 text-sm">
-              <time dateTime={point.date}>{point.date}</time>
-              <span>{Math.round(point.score * 100)}% · {point.attempts} answers</span>
-            </div>
-          ))}
-        </Card>
-      </section>
-
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(260px,0.9fr)]">
-        <Card className="space-y-5 border-slate-200/80 p-5 sm:p-6">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">
-                {t("dashboard.plan")}
-              </p>
-              <h2 className="mt-1 text-lg font-bold text-slate-900">
-                {plan ? t("dashboard.plan") : t("dashboard.noPlan")}
-              </h2>
-            </div>
-            <Link
-              to="/planner"
-              className="inline-flex min-h-10 items-center rounded-lg border border-slate-200 px-3 text-xs font-semibold text-indigo-700 transition hover:border-indigo-200 hover:bg-indigo-50"
-            >
-              {t("dashboard.makePlan")}
-            </Link>
-          </div>
-          {plan ? (
-            <div>
-              <div className="mb-2 flex items-end justify-between gap-3">
-                <p className="text-sm text-slate-600">
-                  {t("dashboard.planProgress", {
-                    done: plan.completed_items,
-                    total: plan.total_items,
-                    percent: Math.round(plan.percent_complete),
-                  })}
-                </p>
-                <span className="text-2xl font-bold text-indigo-700">
-                  {Math.round(plan.percent_complete)}%
-                </span>
-              </div>
-              <div
-                role="progressbar"
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={Math.round(plan.percent_complete)}
-                aria-label={t("dashboard.plan")}
-                className="h-3 overflow-hidden rounded-full bg-indigo-50"
-              >
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-violet-500 transition-[width]"
-                  style={{ width: `${Math.min(100, Math.max(0, plan.percent_complete))}%` }}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5">
-              <p className="text-sm text-slate-600">{t("dashboard.noPlan")}</p>
-              <Link to="/planner" className="mt-2 inline-flex text-sm font-semibold text-indigo-700 hover:underline">
-                {t("dashboard.makePlan")} <span aria-hidden="true" className="ms-1">→</span>
-              </Link>
-            </div>
-          )}
+          {today.data?.items.length === 0 && <div className="friendly-empty"><span className="icon-tile tone-teal"><Icon name="check" size={25}/></span><h3>{t("dash.caughtUp")}</h3><p>{t("dash.caughtUpHint")}</p><Link to="/library" className="text-link">{t("dashboard.explore")}<Icon name="arrow" size={16}/></Link></div>}
+          <div className="today-list">{today.data?.items.slice(0, 4).map((item, index) => <Link key={item.topic_id} to={`/topics/${item.topic_id}`} className="study-topic-row">
+            <span className={`topic-number ${index % 2 ? "tone-teal" : "tone-blue"}`}>{String(index + 1).padStart(2, "0")}</span><span className="topic-label"><strong dir="auto">{item.title}</strong><small>{t(item.reason === "Review due" ? "dash.readyReview" : "dash.morePractice")}</small></span><Icon name="arrow" size={18}/>
+          </Link>)}</div>
+          {!!today.data?.items.length && <Link to="/reviews" className="card-footer-link">{t("dash.allReviews")}<Icon name="arrow" size={16}/></Link>}
         </Card>
 
-        <Card className="border-slate-200/80 p-5 sm:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                {t("dashboard.mastery")}
-              </p>
-              <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-                {Math.round(d.average_mastery * 100)}%
-              </p>
-            </div>
-            <span aria-hidden="true" className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-xl text-emerald-600">✦</span>
-          </div>
-          <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"
-              style={{ width: `${Math.min(100, Math.max(0, d.average_mastery * 100))}%` }}
-            />
-          </div>
-          <p className="mt-3 text-xs leading-relaxed text-slate-500">
-            {t("dashboard.topics")}: {d.topics_covered} / {d.topics_total}
-          </p>
+        <Card>
+          <div className="section-heading"><h2><span className="heading-icon tone-teal"><Icon name="chart"/></span>{t("dash.subjects")}</h2><Link to="/progress" className="text-link">{t("dash.viewProgress")}<Icon name="arrow" size={16}/></Link></div>
+          {subjects.length === 0 ? <div className="friendly-empty compact"><Icon name="book" size={30}/><p>{t("dash.noSubjects")}</p><Link to="/upload" className="text-link">{t("upload.title")}<Icon name="arrow" size={16}/></Link></div> : <div className="subject-list">{subjects.map((subject, index) => <div key={subject.subject} className={`subject-progress tone-${["blue", "teal", "violet", "amber"][index % 4]}`}>
+            <div className="subject-info"><span className="icon-tile"><Icon name="book" size={18}/></span><div><h3 dir="auto">{subject.subject}</h3><p>{t("dash.topicCount", { done: subject.covered, total: subject.total })}</p></div><strong>{percentage(subject.mastery)}%</strong></div>
+            <div role="progressbar" aria-label={subject.subject} aria-valuenow={percentage(subject.mastery)} aria-valuemin={0} aria-valuemax={100} className="study-progress-track"><span style={{ width: `${percentage(subject.mastery)}%` }}/></div>
+          </div>)}</div>}
+        </Card>
+
+        <Card className="plan-card">
+          <div className="section-heading"><h2><span className="heading-icon tone-violet"><Icon name="calendar"/></span>{t("dashboard.plan")}</h2></div>
+          {plan ? <><p className="section-description">{t("dashboard.planProgress", { done: plan.completed_items, total: plan.total_items, percent: percentage(plan.percent_complete) })}</p><div role="progressbar" aria-label={t("dashboard.plan")} aria-valuenow={Math.min(100, Math.max(0, percentage(plan.percent_complete)))} aria-valuemin={0} aria-valuemax={100} className="study-progress-track tone-violet"><span style={{ width: `${percentage(plan.percent_complete)}%` }}/></div></> : <p className="section-description">{t("dash.planHint")}</p>}
+          <Link to="/planner" className="study-button secondary">{t("dashboard.makePlan")}<Icon name="arrow" size={16}/></Link>
         </Card>
       </div>
 
-      <section>
-        <div className="mb-3">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-indigo-600">
-            {t("nav.workspace")}
-          </p>
-          <h2 className="mt-1 text-lg font-bold text-slate-900">{t("dashboard.title")}</h2>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Link to="/library" className="group block">
-            <Card className="h-full border-slate-200/80 p-5 transition group-hover:-translate-y-0.5 group-hover:border-indigo-200 group-hover:shadow-md">
-              <span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-lg text-indigo-700">▤</span>
-              <p className="mt-4 font-bold text-slate-900 group-hover:text-indigo-700">
-                {t("dashboard.explore")}
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-slate-500">{t("nav.library")}</p>
-            </Card>
-          </Link>
-          <Link to="/reviews" className="block">
-            <Card className="h-full border-slate-200/80 p-5 transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
-              <span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-lg text-amber-700">↻</span>
-              <p className="mt-4 font-bold text-slate-900">{t("dashboard.startReview")}</p>
-              <p className="mt-1 text-sm text-slate-500">{t("dashboard.due")}: {d.due_reviews}</p>
-            </Card>
-          </Link>
-          <Link to="/tutor" className="block">
-            <Card className="h-full border-slate-200/80 p-5 transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
-              <span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-xl bg-violet-50 text-lg text-violet-700">✦</span>
-              <p className="mt-4 font-bold text-slate-900">{t("dashboard.askTutor")}</p>
-              <p className="mt-1 text-sm text-slate-500">{t("tutor.subtitle")}</p>
-            </Card>
-          </Link>
-          <Link to="/planner" className="block">
-            <Card className="h-full border-slate-200/80 p-5 transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
-              <span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-xl bg-sky-50 text-lg text-sky-700">▦</span>
-              <p className="mt-4 font-bold text-slate-900">{t("dashboard.makePlan")}</p>
-              <p className="mt-1 text-sm text-slate-500">{t("nav.planner")}</p>
-            </Card>
-          </Link>
-          <Link to="/progress" className="block">
-            <Card className="h-full border-slate-200/80 p-5 transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
-              <span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-lg text-emerald-700">↗</span>
-              <p className="mt-4 font-bold text-slate-900">{t("dashboard.achievements")}</p>
-              <p className="mt-1 text-sm text-slate-500">
-                {d.achievements_unlocked} / {d.achievements_total}
-              </p>
-            </Card>
-          </Link>
-        </div>
-      </section>
+      <div className="dashboard-secondary">
+        <Card><div className="section-heading"><h2><span className="heading-icon tone-amber"><Icon name="sparkles"/></span>{t("dash.quickActions")}</h2></div><div className="quick-actions">{actions.map(action => <Link key={action.to} to={action.to} className="quick-action"><span className={`icon-tile ${action.tone}`}><Icon name={action.icon}/></span><span><strong>{t(action.title)}</strong><small>{t(action.description)}</small></span><Icon name="arrow" size={16}/></Link>)}</div></Card>
+        <Card><div className="section-heading"><h2><span className="heading-icon tone-teal"><Icon name="chart"/></span>{t("dash.scoreTrend")}</h2><span className="mini-label">{t("dash.lastSeven")}</span></div>
+          {trend.length === 0 ? <div className="friendly-empty compact"><Icon name="chart" size={30}/><p>{t("dash.noScores")}</p><Link to="/library" className="text-link">{t("dash.findQuiz")}<Icon name="arrow" size={16}/></Link></div> : <div className="score-chart">{trend.map(point => <div className="score-column" key={point.date}><span className="score-value">{percentage(point.score)}%</span><div className="score-bar-track"><div className="score-bar" style={{ height: `${percentage(point.score)}%` }}/></div><time dateTime={point.date} title={formatDate(point.date, user?.timezone ?? "Asia/Dubai", locale)}>{new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(new Date(`${point.date}T12:00:00Z`))}</time><span className="sr-only">{t("dash.answers", { n: point.attempts })}</span></div>)}</div>}
+          <p className="chart-caption">{t("dash.progressPace")}</p>
+        </Card>
+        <Card><div className="section-heading"><h2><span className="heading-icon tone-violet"><Icon name="calendar"/></span>{t("dash.exams")}</h2></div>{exams.length === 0 ? <p className="section-description">{t("dash.noExams")}</p> : <div className="exam-list">{exams.slice(0, 3).map(exam => <Link to="/planner" key={exam.id} className="exam-row"><span className="icon-tile tone-violet"><Icon name="calendar" size={18}/></span><span><strong dir="auto">{exam.title}</strong><time dateTime={exam.exam_date}>{formatDate(exam.exam_date, user?.timezone ?? "Asia/Dubai", locale)}</time></span></Link>)}</div>}<Link to="/planner" className="text-link">{t("dash.planAhead")}<Icon name="arrow" size={16}/></Link></Card>
+      </div>
     </div>
-  );
+  </div>;
 }

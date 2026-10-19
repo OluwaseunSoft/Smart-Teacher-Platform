@@ -21,11 +21,20 @@ class LLMError(RuntimeError):
     """Raised when a provider call fails. Routes translate this to HTTP 502."""
 
 
+class LLMOutputTruncated(LLMError):
+    """The response exhausted its output budget before completion."""
+
+
 def _extract_json(text: str) -> Any:
     """Best-effort extraction of the first JSON value from model output."""
     text = text.strip()
 
-    fenced = _JSON_FENCE.search(text)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    fenced = _JSON_FENCE.match(text)
     if fenced:
         text = fenced.group(1).strip()
 
@@ -34,15 +43,15 @@ def _extract_json(text: str) -> Any:
     except json.JSONDecodeError:
         pass
 
-    for opener, closer in (("{", "}"), ("[", "]")):
-        start = text.find(opener)
-        end = text.rfind(closer)
-        if start != -1 and end != -1 and end > start:
-            candidate = text[start : end + 1]
-            try:
-                return json.loads(candidate)
-            except json.JSONDecodeError:
-                continue
+    # Only decode the first container. Never salvage a nested objectives array
+    # from an incomplete lesson object.
+    starts = [pos for char in ("{", "[") if (pos := text.find(char)) != -1]
+    if starts:
+        try:
+            value, _ = json.JSONDecoder().raw_decode(text[min(starts):])
+            return value
+        except json.JSONDecodeError:
+            pass
 
     raise LLMError(f"Model did not return valid JSON: {text[:200]!r}")
 

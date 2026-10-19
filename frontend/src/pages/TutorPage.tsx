@@ -199,7 +199,7 @@ export default function TutorPage() {
                           <MarkdownContent>{m.content}</MarkdownContent>
                         </div>
                       ) : (
-                        <p className="whitespace-pre-wrap">{m.content}</p>
+                        <p dir="auto" className="whitespace-pre-wrap">{m.content}</p>
                       )}
                     </div>
                   </div>

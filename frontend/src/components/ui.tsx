@@ -9,7 +9,7 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}
+      className={`study-card rounded-2xl border border-slate-200 bg-white p-5 ${className}`}
     >
       {children}
     </div>
@@ -26,14 +26,14 @@ export function Button({
   ...props
 }: ButtonProps) {
   const styles: Record<string, string> = {
-    primary: "bg-indigo-600 text-white hover:bg-indigo-700 disabled:bg-indigo-300",
+    primary: "bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50",
     secondary:
       "border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-50",
     ghost: "text-indigo-600 hover:bg-indigo-50 disabled:opacity-50",
   };
   return (
     <button
-      className={`rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:cursor-not-allowed ${styles[variant]} ${className}`}
+      className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed ${styles[variant]} ${className}`}
       {...props}
     />
   );

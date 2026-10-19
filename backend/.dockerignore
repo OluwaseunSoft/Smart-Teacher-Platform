@@ -1,6 +1,7 @@
 .env
 .venv
 .venv-*
+.ocr-data/
 __pycache__/
 *.py[cod]
 *.db

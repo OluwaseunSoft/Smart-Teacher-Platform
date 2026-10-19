@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { Button, Card, ErrorText, Spinner } from "../components/ui";
 import MarkdownContent from "../components/MarkdownContent";
+import { useI18n } from "../i18n";
 import type { Lesson } from "../types";
 
 const TABS = [
@@ -106,7 +107,7 @@ function TopicTutor({ topicId }: { topicId: number }) {
                   )}
                 </>
               ) : (
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                <p dir="auto" className="whitespace-pre-wrap">{message.content}</p>
               )}
             </div>
           </div>
@@ -259,6 +260,7 @@ function TopicFlashcards({
 }
 
 export default function TopicPage() {
+  const { t } = useI18n();
   const { topicId } = useParams();
   const id = Number(topicId);
   const navigate = useNavigate();
@@ -339,8 +341,8 @@ export default function TopicPage() {
         )}
         <div>
           <p className="text-sm font-medium text-indigo-700">Topic {item.order_index + 1}</p>
-          <h1 className="mt-1 break-words text-2xl font-semibold sm:text-3xl">{item.title}</h1>
-          <p className="mt-2 max-w-3xl text-slate-600">{item.summary}</p>
+          <h1 dir="auto" className="mt-1 break-words text-2xl font-semibold sm:text-3xl">{item.title}</h1>
+          <p dir="auto" className="mt-2 max-w-3xl text-slate-600">{item.summary}</p>
         </div>
         {item.lessons.length > 1 && (
           <div className="flex flex-wrap gap-2" aria-label="Lessons for this topic">
@@ -401,8 +403,8 @@ export default function TopicPage() {
             {notes.data && (
               <>
                 <Card>
-                  <h2 className="text-lg font-semibold">Quick summary</h2>
-                  <p className="mt-2 text-sm leading-7 text-slate-700">
+                  <h2 className="text-lg font-semibold">{t("notes.summary")}</h2>
+                  <p dir="auto" className="mt-2 text-sm leading-7 text-slate-700">
                     {notes.data.notes.summary.text || item.summary}
                   </p>
                   <p className="mt-2 text-xs text-slate-500">
@@ -410,8 +412,8 @@ export default function TopicPage() {
                   </p>
                 </Card>
                 <Card>
-                  <h2 className="text-lg font-semibold">Key points</h2>
-                  <ul className="mt-3 list-disc space-y-3 ps-5 text-sm leading-7">
+                  <h2 className="text-lg font-semibold">{t("notes.keyPoints")}</h2>
+                  <ul dir="auto" className="mt-3 list-disc space-y-3 ps-5 text-sm leading-7">
                     {notes.data.notes.key_points.map((point, index) => (
                       <li dir="auto" key={`${index}:${point.text}`}>
                         {point.text}
@@ -423,7 +425,7 @@ export default function TopicPage() {
                   </ul>
                 </Card>
                 <Card>
-                  <h2 className="text-lg font-semibold">Flashcards</h2>
+                  <h2 className="text-lg font-semibold">{t("notes.flashcards")}</h2>
                   {notes.data.notes.flashcards.map((card) => (
                     <div key={card.front} className="mt-2 rounded border p-3">
                       <p dir="auto" className="font-medium">{card.front}</p>
@@ -439,12 +441,12 @@ export default function TopicPage() {
                     disabled={translate.isPending || !notes.data.notes.summary.text}
                     onClick={() => translate.mutate(notes.data!.notes.summary.text)}
                   >
-                    {translate.isPending ? "Translating..." : "Translate summary to Arabic"}
+                    {t(translate.isPending ? "notes.translating" : "notes.translateArabic")}
                   </Button>
                   <ErrorText>{translate.error ? translate.error.message : ""}</ErrorText>
                   {translatedNotes && (
-                    <div lang="ar" dir="rtl" className="rounded bg-slate-50 p-3 text-right leading-8">
-                      {translatedNotes}
+                    <div lang="ar" dir="rtl" className="prose-lesson rounded bg-slate-50 p-3 text-right leading-8">
+                      <MarkdownContent>{translatedNotes}</MarkdownContent>
                     </div>
                   )}
                 </Card>
@@ -459,15 +461,15 @@ export default function TopicPage() {
                 {activeLesson.objectives.length > 0 && (
                   <Card>
                     <h2 className="font-semibold">Learning objectives</h2>
-                    <ul className="mt-2 list-disc space-y-1 ps-5 text-sm text-slate-700">
+                    <ul dir="auto" className="mt-2 list-disc space-y-1 ps-5 text-sm text-slate-700">
                       {activeLesson.objectives.map((objective) => (
-                        <li key={objective}>{objective}</li>
+                        <li dir="auto" key={objective}>{objective}</li>
                       ))}
                     </ul>
                   </Card>
                 )}
                 <Card>
-                  <h2 className="mb-3 text-lg font-semibold">{activeLesson.title}</h2>
+                  <h2 dir="auto" className="mb-3 text-lg font-semibold">{activeLesson.title}</h2>
                   <div dir="auto" className="prose-lesson max-w-none break-words">
                     <MarkdownContent>
                       {activeLesson.content || item.summary || "_No notes available yet._"}
@@ -587,7 +589,7 @@ export default function TopicPage() {
                       </span>
                     )}
                   </div>
-                  <p className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">
+                  <p dir="auto" className="whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">
                     {reference.content}
                   </p>
                 </Card>

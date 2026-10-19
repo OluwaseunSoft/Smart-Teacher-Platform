@@ -33,10 +33,15 @@ Supported backends:
 
 `generate_json` strips markdown fences, extracts the first JSON value, and on parse
 failure retries once with a strict "return ONLY valid JSON" system message.
+Incomplete objects are rejected rather than replaced by a nested array.
 
 ## 2. Stage: Ingestion (`services/ingestion.py`)
 
-1. Extract text — `pypdf` for PDFs, direct for text.
+1. Extract text — `pypdf` for PDFs, direct for text. Image-only PDF pages fall
+   back to local Tesseract OCR (`ara+eng`), rendered by PDFium one page at a
+   time. Embedded text and original page numbering are preserved. Temporary
+   page images are removed after recognition; page and document timeouts bound
+   the operation. OCR runs during upload, before curriculum processing.
 2. Normalize whitespace, strip repeated headers/footers heuristically.
 3. Chunk — ~900 chars with 150-char overlap, split on sentence boundaries.
 4. Embed each chunk (batched). On embedding failure, store chunks with
@@ -71,7 +76,7 @@ title+summary, then generate a lesson:
 ```
 System: You are a patient expert teacher. Ground every claim in the provided
         source excerpts. Use plain language, short paragraphs, concrete examples.
-        Output GitHub-flavored markdown with headings.
+        Return one JSON object; put Markdown headings inside content_markdown.
 User:   Concept: ...
         Source excerpts: [1] ... [2] ...
         Produce: learning objectives, explanation, worked example, common
@@ -80,6 +85,14 @@ User:   Concept: ...
 ```
 
 `content_markdown` is stored on `Lesson.content`; objectives as JSON.
+The teaching service validates the response before saving: title and content must
+be nonblank strings, and objectives must be an array of strings. An invalid
+response triggers one repair request using the original source context. If the
+repair also fails, processing stops with a retry message rather than saving an
+empty or malformed lesson. Each generation request is recorded in AI usage.
+Lessons target 400-600 words. Anthropic responses stopped by the output-token
+limit are detected explicitly; the teaching retry raises the budget from 4,096
+to 8,192 tokens so the lesson can finish.
 
 ## 5. Stage: Assessment (`services/assessment.py`)
 

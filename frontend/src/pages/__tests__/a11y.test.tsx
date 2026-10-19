@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 
@@ -43,6 +43,10 @@ vi.mock("../../i18n", () => ({
       "nav.language": "Language",
       "common.signOut": "Sign out",
       "notifications.unread": "1 unread",
+      "shell.lightMode": "Switch to light mode",
+      "shell.darkMode": "Switch to dark mode",
+      "shell.more": "More",
+      "common.close": "Close",
     })[key] ?? key,
     lang: "en",
     setLanguage: vi.fn(),
@@ -52,6 +56,7 @@ vi.mock("../../i18n", () => ({
 vi.mock("../../api/client", () => ({
   api: {
     listNotifications: vi.fn().mockResolvedValue({ unread: 0 }),
+    getStudyToday: vi.fn().mockResolvedValue({ items: [] }),
     getDashboard: vi.fn().mockResolvedValue({
       streak: { current: 4, longest: 5 },
       topics_covered: 3,
@@ -60,7 +65,11 @@ vi.mock("../../api/client", () => ({
       due_reviews: 2,
       achievements_unlocked: 1,
       achievements_total: 4,
-      active_plan: { completed_items: 1, total_items: 3, percent_complete: 33 },
+      active_plan: { completed_items: 1, total_items: 3, percent_complete: 0.3333 },
+      study_minutes: 20,
+      score_trend: [],
+      subject_progress: [],
+      upcoming_exams: [],
     }),
   },
 }));
@@ -80,6 +89,7 @@ function renderApp() {
 }
 
 describe("Suhail app accessibility basics", () => {
+  beforeEach(() => localStorage.clear());
   it("renders a skip-to-content link and primary navigation landmarks", () => {
     renderApp();
 
@@ -95,5 +105,25 @@ describe("Suhail app accessibility basics", () => {
     expect(
       screen.getByRole("link", { name: "Build a study plan" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Dashboard plan" })).toHaveAttribute("aria-valuenow", "33");
+  });
+
+  it("switches and remembers the appearance preference", () => {
+    const { container } = renderApp();
+    fireEvent.click(screen.getByRole("button", { name: "Switch to light mode" }));
+    expect(container.querySelector(".app-shell")).toHaveAttribute("data-theme", "light");
+    expect(localStorage.getItem("suhail.theme")).toBe("light");
+    expect(screen.getByRole("button", { name: "Switch to dark mode" })).toBeInTheDocument();
+  });
+
+  it("opens additional navigation and restores focus on Escape", () => {
+    renderApp();
+    const more = screen.getByRole("button", { name: "More" });
+    fireEvent.click(more);
+    expect(more).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("navigation", { name: "More" })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    expect(more).toHaveFocus();
   });
 });

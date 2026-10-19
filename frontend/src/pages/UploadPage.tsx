@@ -161,7 +161,11 @@ export default function UploadPage() {
         <ErrorText>{error}</ErrorText>
         {uploadProgress !== null && create.isPending && (
           <div aria-live="polite" className="space-y-1">
-            <p className="text-sm text-slate-600">Uploading: {uploadProgress}%</p>
+            <p className="text-sm text-slate-600">
+              {uploadProgress >= 100
+                ? t("upload.reading")
+                : t("upload.progress", { n: uploadProgress })}
+            </p>
             <progress
               aria-label="File upload progress"
               value={uploadProgress}

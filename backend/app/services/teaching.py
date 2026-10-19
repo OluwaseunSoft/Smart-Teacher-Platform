@@ -1,13 +1,23 @@
 from __future__ import annotations
 
+import json
+
+from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import prompts
 from app.llm import get_llm
+from app.llm.base import LLMOutputTruncated
 from app.models import Concept, Lesson, Material, Topic
 from app.services.ai_usage import track_ai
 from app.services.retrieval import rank_chunks
+
+
+class _LessonResponse(BaseModel):
+    title: str = Field(min_length=1)
+    objectives: list[str]
+    content_markdown: str = Field(min_length=1)
 
 
 def generate_lesson(
@@ -20,32 +30,53 @@ def generate_lesson(
     excerpts = [chunk.content for chunk, _ in ranked]
 
     provider = get_llm()
-    with track_ai(
-        db, provider, "teaching.generate_lesson", user_id=_owner_user_id(material)
-    ):
-        data = provider.generate_json(
-            [
-                {
-                    "role": "user",
-                    "content": prompts.teaching.teaching_user(
-                        concept.title, concept.summary, excerpts, simpler=simpler
-                    ),
-                }
-            ],
-            system=prompts.teaching.TEACHING_SYSTEM,
-            max_tokens=4096,
-        )
-    if not isinstance(data, dict):
-        raise ValueError("Teaching returned an unexpected shape.")
+    messages = [{
+        "role": "user",
+        "content": prompts.teaching.teaching_user(
+            concept.title, concept.summary, excerpts, simpler=simpler
+        ),
+    }]
+    for attempt in range(2):
+        data = None
+        try:
+            with track_ai(
+                db, provider, "teaching.generate_lesson", user_id=_owner_user_id(material)
+            ):
+                data = provider.generate_json(
+                    messages,
+                    system=prompts.teaching.TEACHING_SYSTEM,
+                    max_tokens=4096 if attempt == 0 else 8192,
+                )
+                response = _LessonResponse.model_validate(data)
+                if not response.title.strip() or not response.content_markdown.strip():
+                    raise ValueError("Lesson title and content must not be blank.")
+            break
+        except (ValidationError, ValueError, LLMOutputTruncated) as exc:
+            if attempt:
+                raise ValueError(
+                    "The AI could not produce a valid lesson after two attempts. "
+                    "Please retry processing the material."
+                ) from exc
+            messages = messages + [
+                {"role": "assistant", "content": json.dumps(data, ensure_ascii=False)},
+                {"role": "user", "content": (
+                    "Return one JSON object, not an array or string. It must have "
+                    "a non-empty string title, an objectives array of strings, and "
+                    "a non-empty content_markdown string containing the lesson. "
+                    "Use the original concept and source excerpts."
+                    " Keep the lesson concise (about 400-600 words) so the JSON "
+                    "can finish within the output limit."
+                )},
+            ]
 
     topic = _topic_for_concept(db, concept.id)
     lesson = Lesson(
         material_id=material.id,
         concept_id=concept.id,
         topic_id=topic.id if topic is not None else None,
-        title=str(data.get("title") or concept.title)[:300],
-        objectives=[str(o) for o in data.get("objectives", [])][:8],
-        content=str(data.get("content_markdown", "")),
+        title=response.title[:300],
+        objectives=response.objectives[:8],
+        content=response.content_markdown,
         language=_language_for(topic),
         grounding=[{"chunk_id": c.id, "index": c.index} for c, _ in ranked],
         status="ready",

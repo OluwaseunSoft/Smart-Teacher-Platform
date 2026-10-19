@@ -46,7 +46,7 @@ export default function LessonPage() {
         >
           ← Back to material
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold">{l.title}</h1>
+        <h1 dir="auto" className="mt-1 text-2xl font-semibold">{l.title}</h1>
       </div>
 
       {l.objectives.length > 0 && (
@@ -54,9 +54,9 @@ export default function LessonPage() {
           <p className="mb-2 text-sm font-semibold text-slate-500">
             Learning objectives
           </p>
-          <ul className="list-disc space-y-1 ps-5 text-sm text-slate-700">
+          <ul dir="auto" className="list-disc space-y-1 ps-5 text-sm text-slate-700">
             {l.objectives.map((o) => (
-              <li key={o}>{o}</li>
+              <li dir="auto" key={o}>{o}</li>
             ))}
           </ul>
         </Card>

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.llm.base import LLMError, LLMProvider, Message
+from app.llm.base import LLMError, LLMOutputTruncated, LLMProvider, Message
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
 
@@ -49,6 +49,10 @@ class AnthropicProvider(LLMProvider):
                 "completion_tokens": int(getattr(usage, "output_tokens", 0) or 0),
             }
 
+        if getattr(resp, "stop_reason", None) == "max_tokens":
+            raise LLMOutputTruncated(
+                f"Anthropic response reached the {max_tokens}-token output limit."
+            )
         return "".join(block.text for block in resp.content if block.type == "text")
 
     def embed(self, texts: list[str]) -> list[list[float]]:

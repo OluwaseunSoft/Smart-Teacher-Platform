@@ -23,6 +23,12 @@ Uploads accept PDF, TXT, or Markdown files up to 50 MB. Text uploads are limited
 to 100,000 characters. Oversized files return HTTP 413; text exceeding the limit
 is rejected with a validation response. File uploads default the material title
 to the original filename; clients may submit an edited `title`.
+PDF pages without embedded text that contain images are recognized with local
+Arabic/English OCR. Recognition completes before the 201 response and preserves
+page positions. Clients should keep waiting after upload transfer reaches 100%.
+Missing OCR tools/languages, recognition timeouts, or unreadable scans return
+HTTP 400 with a setup or retry explanation; failed recognition does not create a
+partially extracted material.
 
 | Method | Path | Description |
 |---|---|---|
